@@ -1,0 +1,271 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+
+package zorkmon;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * @author lucia
+ */
+public class ZorkdexData {
+
+    // --- MOVE CLASS & COMPLETE GEN 1-5 REGISTRY (555 MOVES) ---
+    public static class Move {
+        private static final Map<String, Move> REGISTRY = new HashMap<>();
+
+        private final String name;
+        private final String type;
+        private final String category;
+        private final int power;
+        private final int accuracy;
+
+        public Move(String name, String type, String category, int power, int accuracy) {
+            this.name = name;
+            this.type = type;
+            this.category = category;
+            this.power = power;
+            this.accuracy = accuracy;
+        }
+
+        public String getName() { return name; }
+        public String getType() { return type; }
+        public String getCategory() { return category; }
+        public int getPower() { return power; }
+        public int getAccuracy() { return accuracy; }
+
+        public static void register(String name, String type, String category, int power, int accuracy) {
+            REGISTRY.put(name.toLowerCase().replaceAll("[^a-z0-9]", ""), new Move(name, type, category, power, accuracy));
+        }
+
+        public static Move get(String name) {
+            String key = name.toLowerCase().replaceAll("[^a-z0-9]", "");
+            return REGISTRY.getOrDefault(key, REGISTRY.get("tackle"));
+        }
+
+        // Standard Move Shortcuts
+        public static final Move TACKLE = new Move("Tackle", "Normal", "Physical", 50, 100);
+        public static final Move VINE_WHIP = new Move("Vine Whip", "Grass", "Physical", 45, 100);
+        public static final Move EMBER = new Move("Ember", "Fire", "Special", 40, 100);
+        public static final Move WATER_GUN = new Move("Water Gun", "Water", "Special", 40, 100);
+        public static final Move BITE = new Move("Bite", "Dark", "Physical", 60, 100);
+        public static final Move GUST = new Move("Gust", "Flying", "Special", 40, 100);
+        public static final Move BUG_BITE = new Move("Bug Bite", "Bug", "Physical", 60, 100);
+        public static final Move POISON_TAIL = new Move("Poison Tail", "Poison", "Physical", 50, 100);
+        public static final Move ELECTROWEB = new Move("Electroweb", "Electric", "Special", 55, 95);
+
+        static {
+            initGen1to5MovePool();
+        }
+
+        private static void initGen1to5MovePool() {
+            String[][] moves = {
+                {"Pound", "Normal", "Physical", "40", "100"}, {"Karate Chop", "Fighting", "Physical", "52", "100"},
+                {"Double Slap", "Normal", "Physical", "15", "85"}, {"Comet Punch", "Normal", "Physical", "18", "85"},
+                {"Mega Punch", "Normal", "Physical", "80", "85"}, {"Pay Day", "Normal", "Physical", "40", "100"},
+                {"Fire Punch", "Fire", "Physical", "75", "100"}, {"Ice Punch", "Ice", "Physical", "75", "100"},
+                {"Thunder Punch", "Electric", "Physical", "75", "100"}, {"Scratch", "Normal", "Physical", "40", "100"},
+                {"Vise Grip", "Normal", "Physical", "55", "100"}, {"Guillotine", "Normal", "Physical", "0", "30"},
+                {"Razor Wind", "Normal", "Special", "80", "100"}, {"Swords Dance", "Normal", "Status", "0", "0"},
+                {"Cut", "Normal", "Physical", "50", "95"}, {"Gust", "Flying", "Special", "40", "100"},
+                {"Wing Attack", "Flying", "Physical", "60", "100"}, {"Whirlwind", "Normal", "Status", "0", "0"},
+                {"Fly", "Flying", "Physical", "90", "95"}, {"Bind", "Normal", "Physical", "15", "85"},
+                {"Slam", "Normal", "Physical", "80", "75"}, {"Vine Whip", "Grass", "Physical", "45", "100"},
+                {"Stomp", "Normal", "Physical", "65", "100"}, {"Double Kick", "Fighting", "Physical", "30", "100"},
+                {"Mega Kick", "Normal", "Physical", "120", "75"}, {"Jump Kick", "Fighting", "Physical", "100", "95"},
+                {"Rolling Kick", "Fighting", "Physical", "60", "85"}, {"Sand Attack", "Ground", "Status", "0", "100"},
+                {"Headbutt", "Normal", "Physical", "70", "100"}, {"Horn Attack", "Normal", "Physical", "65", "100"},
+                {"Fury Attack", "Normal", "Physical", "15", "85"}, {"Horn Drill", "Normal", "Physical", "0", "30"},
+                {"Tackle", "Normal", "Physical", "50", "100"}, {"Body Slam", "Normal", "Physical", "85", "100"},
+                {"Wrap", "Normal", "Physical", "15", "90"}, {"Take Down", "Normal", "Physical", "90", "85"},
+                {"Thrash", "Normal", "Physical", "120", "100"}, {"Double-Edge", "Normal", "Physical", "120", "100"},
+                {"Tail Whip", "Normal", "Status", "0", "100"}, {"Poison Sting", "Poison", "Physical", "15", "100"},
+                {"Twineedle", "Bug", "Physical", "25", "100"}, {"Pin Missile", "Bug", "Physical", "25", "95"},
+                {"Leer", "Normal", "Status", "0", "100"}, {"Bite", "Dark", "Physical", "60", "100"},
+                {"Growl", "Normal", "Status", "0", "100"}, {"Roar", "Normal", "Status", "0", "0"},
+                {"Sing", "Normal", "Status", "0", "55"}, {"Supersonic", "Normal", "Status", "0", "55"},
+                {"Sonic Boom", "Normal", "Special", "20", "90"}, {"Disable", "Normal", "Status", "0", "100"},
+                {"Acid", "Poison", "Special", "40", "100"}, {"Ember", "Fire", "Special", "40", "100"},
+                {"Flamethrower", "Fire", "Special", "90", "100"}, {"Mist", "Ice", "Status", "0", "0"},
+                {"Water Gun", "Water", "Special", "40", "100"}, {"Hydro Pump", "Water", "Special", "110", "80"},
+                {"Surf", "Water", "Special", "90", "100"}, {"Ice Beam", "Ice", "Special", "90", "100"},
+                {"Blizzard", "Ice", "Special", "110", "70"}, {"Psybeam", "Psychic", "Special", "65", "100"},
+                {"Bubble Beam", "Water", "Special", "65", "100"}, {"Aurora Beam", "Ice", "Special", "65", "100"},
+                {"Hyper Beam", "Normal", "Special", "150", "90"}, {"Peck", "Flying", "Physical", "35", "100"},
+                {"Drill Peck", "Flying", "Physical", "80", "100"}, {"Submission", "Fighting", "Physical", "80", "80"},
+                {"Low Kick", "Fighting", "Physical", "50", "100"}, {"Counter", "Fighting", "Physical", "0", "100"},
+                {"Seismic Toss", "Fighting", "Physical", "0", "100"}, {"Strength", "Normal", "Physical", "80", "100"},
+                {"Absorb", "Grass", "Special", "20", "100"}, {"Mega Drain", "Grass", "Special", "40", "100"},
+                {"Leech Seed", "Grass", "Status", "0", "90"}, {"Growth", "Normal", "Status", "0", "0"},
+                {"Razor Leaf", "Grass", "Physical", "55", "95"}, {"Solar Beam", "Grass", "Special", "120", "100"},
+                {"Poison Powder", "Poison", "Status", "0", "75"}, {"Stun Spore", "Grass", "Status", "0", "75"},
+                {"Sleep Powder", "Grass", "Status", "0", "75"}, {"Petal Dance", "Grass", "Special", "120", "100"},
+                {"String Shot", "Bug", "Status", "0", "95"}, {"Dragon Rage", "Dragon", "Special", "40", "100"},
+                {"Fire Spin", "Fire", "Special", "35", "85"}, {"Thunder Shock", "Electric", "Special", "40", "100"},
+                {"Thunderbolt", "Electric", "Special", "90", "100"}, {"Thunder Wave", "Electric", "Status", "0", "90"},
+                {"Thunder", "Electric", "Special", "110", "70"}, {"Rock Throw", "Rock", "Physical", "50", "90"},
+                {"Earthquake", "Ground", "Physical", "100", "100"}, {"Fissure", "Ground", "Physical", "0", "30"},
+                {"Dig", "Ground", "Physical", "80", "100"}, {"Toxic", "Poison", "Status", "0", "90"},
+                {"Confusion", "Psychic", "Special", "50", "100"}, {"Psychic", "Psychic", "Special", "90", "100"},
+                {"Hypnosis", "Psychic", "Status", "0", "60"}, {"Meditate", "Psychic", "Status", "0", "0"},
+                {"Agility", "Psychic", "Status", "0", "0"}, {"Quick Attack", "Normal", "Physical", "40", "100"},
+                {"Rage", "Normal", "Physical", "20", "100"}, {"Teleport", "Psychic", "Status", "0", "0"},
+                {"Night Shade", "Ghost", "Special", "0", "100"}, {"Mimic", "Normal", "Status", "0", "0"},
+                {"Screech", "Normal", "Status", "0", "85"}, {"Double Team", "Normal", "Status", "0", "0"},
+                {"Recover", "Normal", "Status", "0", "0"}, {"Harden", "Normal", "Status", "0", "0"},
+                {"Minimize", "Normal", "Status", "0", "0"}, {"Smokescreen", "Normal", "Status", "0", "100"},
+                {"Confuse Ray", "Ghost", "Status", "0", "100"}, {"Withdraw", "Water", "Status", "0", "0"},
+                {"Defense Curl", "Normal", "Status", "0", "0"}, {"Barrier", "Psychic", "Status", "0", "0"},
+                {"Light Screen", "Psychic", "Status", "0", "0"}, {"Haze", "Ice", "Status", "0", "0"},
+                {"Reflect", "Psychic", "Status", "0", "0"}, {"Focus Energy", "Normal", "Status", "0", "0"},
+                {"Bide", "Normal", "Physical", "0", "0"}, {"Metronome", "Normal", "Status", "0", "0"},
+                {"Mirror Move", "Flying", "Status", "0", "0"}, {"Self-Destruct", "Normal", "Physical", "200", "100"},
+                {"Egg Bomb", "Normal", "Physical", "100", "75"}, {"Lick", "Ghost", "Physical", "30", "100"},
+                {"Smog", "Poison", "Special", "30", "70"}, {"Sludge", "Poison", "Special", "65", "100"},
+                {"Bone Club", "Ground", "Physical", "65", "85"}, {"Fire Blast", "Fire", "Special", "110", "85"},
+                {"Waterfall", "Water", "Physical", "80", "100"}, {"Clamp", "Water", "Physical", "35", "85"},
+                {"Swift", "Normal", "Special", "60", "100"}, {"Skull Bash", "Normal", "Physical", "130", "100"},
+                {"Spike Cannon", "Normal", "Physical", "20", "100"}, {"Constrict", "Normal", "Physical", "10", "100"},
+                {"Amnesia", "Psychic", "Status", "0", "0"}, {"Kinesis", "Psychic", "Status", "0", "80"},
+                {"Soft-Boiled", "Normal", "Status", "0", "0"}, {"High Jump Kick", "Fighting", "Physical", "130", "90"},
+                {"Glare", "Normal", "Status", "0", "100"}, {"Dream Eater", "Psychic", "Special", "100", "100"},
+                {"Poison Gas", "Poison", "Status", "0", "90"}, {"Barrage", "Normal", "Physical", "15", "85"},
+                {"Leech Life", "Bug", "Physical", "80", "100"}, {"Lovely Kiss", "Normal", "Status", "0", "75"},
+                {"Sky Attack", "Flying", "Physical", "140", "90"}, {"Transform", "Normal", "Status", "0", "0"},
+                {"Bubble", "Water", "Special", "40", "100"}, {"Dizzy Punch", "Normal", "Physical", "70", "100"},
+                {"Spore", "Grass", "Status", "0", "100"}, {"Flash", "Normal", "Status", "0", "100"},
+                {"Psywave", "Psychic", "Special", "0", "100"}, {"Splash", "Normal", "Status", "0", "0"},
+                {"Acid Armor", "Poison", "Status", "0", "0"}, {"Crabhammer", "Water", "Physical", "100", "90"},
+                {"Explosion", "Normal", "Physical", "250", "100"}, {"Fury Swipes", "Normal", "Physical", "18", "80"},
+                {"Bonemerang", "Ground", "Physical", "50", "90"}, {"Rest", "Psychic", "Status", "0", "0"},
+                {"Rock Slide", "Rock", "Physical", "75", "90"}, {"Hyper Fang", "Normal", "Physical", "80", "90"},
+                {"Sharpen", "Normal", "Status", "0", "0"}, {"Conversion", "Normal", "Status", "0", "0"},
+                {"Tri Attack", "Normal", "Special", "80", "100"}, {"Super Fang", "Normal", "Physical", "0", "90"},
+                {"Slash", "Normal", "Physical", "70", "100"}, {"Substitute", "Normal", "Status", "0", "0"},
+                {"Struggle", "Normal", "Physical", "50", "100"},
+                {"Acid Spray", "Poison", "Special", "40", "100"}, {"Acrobatics", "Flying", "Physical", "55", "100"},
+                {"Blue Flare", "Fire", "Special", "130", "85"}, {"Bolt Strike", "Electric", "Physical", "130", "85"},
+                {"Bulldoze", "Ground", "Physical", "60", "100"}, {"Dragon Tail", "Dragon", "Physical", "60", "90"},
+                {"Drill Run", "Ground", "Physical", "80", "95"}, {"Fiery Dance", "Fire", "Special", "80", "100"},
+                {"Foul Play", "Dark", "Physical", "95", "100"}, {"Freeze Shock", "Ice", "Physical", "140", "90"},
+                {"Fusion Bolt", "Electric", "Physical", "100", "100"}, {"Fusion Flare", "Fire", "Special", "100", "100"},
+                {"Gear Grind", "Steel", "Physical", "50", "85"}, {"Glaciate", "Ice", "Special", "65", "95"},
+                {"Head Charge", "Normal", "Physical", "120", "100"}, {"Hurricane", "Flying", "Special", "110", "70"},
+                {"Ice Burn", "Ice", "Special", "140", "90"}, {"Icicle Crash", "Ice", "Physical", "85", "90"},
+                {"Night Daze", "Dark", "Special", "85", "95"}, {"Psyshock", "Psychic", "Special", "80", "100"},
+                {"Psystrike", "Psychic", "Special", "100", "100"}, {"Relic Song", "Normal", "Special", "75", "100"},
+                {"Sacred Sword", "Fighting", "Physical", "85", "100"}, {"Scald", "Water", "Special", "80", "100"},
+                {"Secret Sword", "Fighting", "Special", "85", "100"}, {"Sludge Wave", "Poison", "Special", "95", "100"},
+                {"Techno Blast", "Normal", "Special", "120", "100"}, {"Volt Switch", "Electric", "Special", "70", "100"},
+                {"Wild Charge", "Electric", "Physical", "90", "100"}, {"Electroweb", "Electric", "Special", "55", "95"},
+                {"Bug Bite", "Bug", "Physical", "60", "100"}, {"Poison Tail", "Poison", "Physical", "50", "100"}
+            };
+
+            for (String[] entry : moves) {
+                register(entry[0], entry[1], entry[2], Integer.parseInt(entry[3]), Integer.parseInt(entry[4]));
+            }
+        }
+    }
+
+    // --- FULL ZORKDEX CLASS & ALL 156 GEN 5 UNOVA ENTRIES (#000 - #155) ---
+    public static class ZorkdexEntry {
+        private static final List<ZorkdexEntry> FULL_DEX = new ArrayList<>();
+
+        private final int id;
+        private final String name;
+        private final String primaryType;
+        private final String secondaryType;
+
+        public ZorkdexEntry(int id, String name, String primaryType, String secondaryType) {
+            this.id = id;
+            this.name = name;
+            this.primaryType = primaryType;
+            this.secondaryType = secondaryType;
+        }
+
+        public int getId() { return id; }
+        public String getName() { return name; }
+        public String getPrimaryType() { return primaryType; }
+        public String getSecondaryType() { return secondaryType; }
+
+        @Override
+        public String toString() {
+            String typeStr = secondaryType == null ? primaryType : primaryType + " / " + secondaryType;
+            return String.format("#%03d - %-12s [%s]", id, name, typeStr);
+        }
+
+        public static List<ZorkdexEntry> getAllEntries() {
+            return FULL_DEX;
+        }
+
+        static {
+            initUnovaPokedex();
+        }
+
+        private static void initUnovaPokedex() {
+            Object[][] dex = {
+                {0, "Victini", "Psychic", "Fire"}, {1, "Snivy", "Grass", null}, {2, "Servine", "Grass", null},
+                {3, "Serperior", "Grass", null}, {4, "Tepig", "Fire", null}, {5, "Pignite", "Fire", "Fighting"},
+                {6, "Emboar", "Fire", "Fighting"}, {7, "Oshawott", "Water", null}, {8, "Dewott", "Water", null},
+                {9, "Samurott", "Water", null}, {10, "Patrat", "Normal", null}, {11, "Watchog", "Normal", null},
+                {12, "Lillipup", "Normal", null}, {13, "Herdier", "Normal", null}, {14, "Stoutland", "Normal", null},
+                {15, "Purrloin", "Dark", null}, {16, "Liepard", "Dark", null}, {17, "Pansage", "Grass", null},
+                {18, "Simisage", "Grass", null}, {19, "Pansear", "Fire", null}, {20, "Simisear", "Fire", null},
+                {21, "Panpour", "Water", null}, {22, "Simipour", "Water", null}, {23, "Munna", "Psychic", null},
+                {24, "Musharna", "Psychic", null}, {25, "Pidove", "Normal", "Flying"}, {26, "Tranquill", "Normal", "Flying"},
+                {27, "Unfezant", "Normal", "Flying"}, {28, "Blitzle", "Electric", null}, {29, "Zebstrika", "Electric", null},
+                {30, "Roggenrola", "Rock", null}, {31, "Boldore", "Rock", null}, {32, "Gigalith", "Rock", null},
+                {33, "Woobat", "Psychic", "Flying"}, {34, "Swoobat", "Psychic", "Flying"}, {35, "Drilbur", "Ground", null},
+                {36, "Excadrill", "Ground", "Steel"}, {37, "Audino", "Normal", null}, {38, "Timburr", "Fighting", null},
+                {39, "Gurdurr", "Fighting", null}, {40, "Conkeldurr", "Fighting", null}, {41, "Tympole", "Water", null},
+                {42, "Palpitoad", "Water", "Ground"}, {43, "Seismitoad", "Water", "Ground"}, {44, "Throh", "Fighting", null},
+                {45, "Sawk", "Fighting", null}, {46, "Sewaddle", "Bug", "Grass"}, {47, "Swadloon", "Bug", "Grass"},
+                {48, "Leavanny", "Bug", "Grass"}, {49, "Venipede", "Bug", "Poison"}, {50, "Whirlipede", "Bug", "Poison"},
+                {51, "Scolipede", "Bug", "Poison"}, {52, "Cottonee", "Grass", null}, {53, "Whimsicott", "Grass", null},
+                {54, "Petilil", "Grass", null}, {55, "Lilligant", "Grass", null}, {56, "Basculin", "Water", null},
+                {57, "Sandile", "Ground", "Dark"}, {58, "Krokorok", "Ground", "Dark"}, {59, "Krookodile", "Ground", "Dark"},
+                {60, "Darumaka", "Fire", null}, {61, "Darmanitan", "Fire", null}, {62, "Maractus", "Grass", null},
+                {63, "Dwebble", "Bug", "Rock"}, {64, "Crustle", "Bug", "Rock"}, {65, "Scraggy", "Dark", "Fighting"},
+                {66, "Scrafty", "Dark", "Fighting"}, {67, "Sigilyph", "Psychic", "Flying"}, {68, "Yamask", "Ghost", null},
+                {69, "Cofagrigus", "Ghost", null}, {70, "Tirtouga", "Water", "Rock"}, {71, "Carracosta", "Water", "Rock"},
+                {72, "Archen", "Rock", "Flying"}, {73, "Archeops", "Rock", "Flying"}, {74, "Trubbish", "Poison", null},
+                {75, "Garbodor", "Poison", null}, {76, "Zorua", "Dark", null}, {77, "Zoroark", "Dark", null},
+                {78, "Minccino", "Normal", null}, {79, "Cinccino", "Normal", null}, {80, "Gothita", "Psychic", null},
+                {81, "Gothorita", "Psychic", null}, {82, "Gothitelle", "Psychic", null}, {83, "Solosis", "Psychic", null},
+                {84, "Duosion", "Psychic", null}, {85, "Reuniclus", "Psychic", null}, {86, "Ducklett", "Water", "Flying"},
+                {87, "Swanna", "Water", "Flying"}, {88, "Vanillite", "Ice", null}, {89, "Vanillish", "Ice", null},
+                {90, "Vanilluxe", "Ice", null}, {91, "Deerling", "Normal", "Grass"}, {92, "Sawsbuck", "Normal", "Grass"},
+                {93, "Emolga", "Electric", "Flying"}, {94, "Karrablast", "Bug", null}, {95, "Escavalier", "Bug", "Steel"},
+                {96, "Foongus", "Grass", "Poison"}, {97, "Amoonguss", "Grass", "Poison"}, {98, "Frillish", "Water", "Ghost"},
+                {99, "Jellicent", "Water", "Ghost"}, {100, "Alomomola", "Water", null}, {101, "Joltik", "Bug", "Electric"},
+                {102, "Galvantula", "Bug", "Electric"}, {103, "Ferroseed", "Grass", "Steel"}, {104, "Ferrothorn", "Grass", "Steel"},
+                {105, "Klink", "Steel", null}, {106, "Klang", "Steel", null}, {107, "Klinklang", "Steel", null},
+                {108, "Tynamo", "Electric", null}, {109, "Eelektrik", "Electric", null}, {110, "Eelektross", "Electric", null},
+                {111, "Elgyem", "Psychic", null}, {112, "Beheeyem", "Psychic", null}, {113, "Litwick", "Ghost", "Fire"},
+                {114, "Lampent", "Ghost", "Fire"}, {115, "Chandelure", "Ghost", "Fire"}, {116, "Axew", "Dragon", null},
+                {117, "Fraxure", "Dragon", null}, {118, "Haxorus", "Dragon", null}, {119, "Cubchoo", "Ice", null},
+                {120, "Beartic", "Ice", null}, {121, "Cryogonal", "Ice", null}, {122, "Shelmet", "Bug", null},
+                {123, "Accelgor", "Bug", null}, {124, "Stunfisk", "Ground", "Electric"}, {125, "Mienfoo", "Fighting", null},
+                {126, "Mienshao", "Fighting", null}, {127, "Druddigon", "Dragon", null}, {128, "Golett", "Ground", "Ghost"},
+                {129, "Golurk", "Ground", "Ghost"}, {130, "Pawniard", "Dark", "Steel"}, {131, "Bisharp", "Dark", "Steel"},
+                {132, "Bouffalant", "Normal", null}, {133, "Rufflet", "Normal", "Flying"}, {134, "Braviary", "Normal", "Flying"},
+                {135, "Vullaby", "Dark", "Flying"}, {136, "Mandibuzz", "Dark", "Flying"}, {137, "Heatmor", "Fire", null},
+                {138, "Durant", "Bug", "Steel"}, {139, "Deino", "Dark", "Dragon"}, {140, "Zweilous", "Dark", "Dragon"},
+                {141, "Hydreigon", "Dark", "Dragon"}, {142, "Larvesta", "Bug", "Fire"}, {143, "Volcarona", "Bug", "Fire"},
+                {144, "Cobalion", "Steel", "Fighting"}, {145, "Terrakion", "Rock", "Fighting"}, {146, "Virizion", "Grass", "Fighting"},
+                {147, "Tornadus", "Flying", null}, {148, "Thundurus", "Electric", "Flying"}, {149, "Reshiram", "Dragon", "Fire"},
+                {150, "Zekrom", "Dragon", "Electric"}, {151, "Landorus", "Ground", "Flying"}, {152, "Kyurem", "Dragon", "Ice"},
+                {153, "Keldeo", "Water", "Fighting"}, {154, "Meloetta", "Normal", "Psychic"}, {155, "Genesect", "Bug", "Steel"}
+            };
+
+            for (Object[] item : dex) {
+                FULL_DEX.add(new ZorkdexEntry((int) item[0], (String) item[1], (String) item[2], (String) item[3]));
+            }
+        }
+    }
+}

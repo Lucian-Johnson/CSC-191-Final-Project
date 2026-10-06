@@ -1,0 +1,682 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Main.java to edit this template
+ */
+
+package zorkmon;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.Scanner;
+import java.util.stream.Collectors;
+import zorkmon.ZorkdexData.Move;
+import zorkmon.ZorkdexData.ZorkdexEntry;
+
+/**
+ * @author lucia
+ */
+public class Zorkmon {
+
+    // Active Zorkmon Class featuring EXP & Leveling
+    static class ZorkmonPet {
+        String name;
+        String primaryType;
+        String secondaryType;
+        int level;
+        int hp;
+        int maxHp;
+        int attack;
+        int defense;
+        int exp;
+        int expToNextLevel;
+        int baseExpYield;
+        Move specialMove;
+
+        ZorkmonPet(String name, String primaryType, String secondaryType, int level, int hp, int attack, int defense, int baseExpYield, Move specialMove) {
+            this.name = name;
+            this.primaryType = primaryType;
+            this.secondaryType = secondaryType;
+            this.level = level;
+            this.hp = hp;
+            this.maxHp = hp;
+            this.attack = attack;
+            this.defense = defense;
+            this.baseExpYield = baseExpYield;
+            this.exp = 0;
+            this.expToNextLevel = calculateExpForLevel(level + 1);
+            this.specialMove = specialMove;
+        }
+
+        boolean isFainted() {
+            return this.hp <= 0;
+        }
+
+        String getTypeDisplay() {
+            return secondaryType == null ? primaryType : primaryType + "/" + secondaryType;
+        }
+
+        private static int calculateExpForLevel(int lvl) {
+            return lvl * lvl * lvl;
+        }
+
+        public void gainExp(int gainedExp) {
+            this.exp += gainedExp;
+            System.out.println(this.name + " gained " + gainedExp + " EXP! (" + this.exp + "/" + this.expToNextLevel + " EXP)");
+
+            while (this.exp >= this.expToNextLevel) {
+                levelUp();
+            }
+        }
+
+        private void levelUp() {
+            this.level++;
+            this.expToNextLevel = calculateExpForLevel(this.level + 1);
+            this.maxHp += 5;
+            this.hp = this.maxHp;
+            this.attack += 3;
+            this.defense += 2;
+
+            System.out.println("\n------------------------------------------------------------------");
+            System.out.println(" LEVEL UP! " + this.name + " grew to Level " + this.level + "!");
+            System.out.println(" Max HP: " + (this.maxHp - 5) + " -> " + this.maxHp + " (Fully Healed)");
+            System.out.println(" Atk:    " + (this.attack - 3) + " -> " + this.attack);
+            System.out.println(" Def:    " + (this.defense - 2) + " -> " + this.defense);
+            System.out.println("------------------------------------------------------------------");
+        }
+    }
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+        Random random = new Random();
+
+        boolean inApp = true;
+
+        while (inApp) {
+            System.out.println("=========================================");
+            System.out.println("      WELCOME TO ZORKMON: UNOVA          ");
+            System.out.println("=========================================");
+            System.out.println("1. Start Game");
+            System.out.println("2. Open Zorkdex");
+            System.out.println("3. Exit Program");
+            System.out.print("Select an option > ");
+
+            String mainChoice = scanner.nextLine().trim();
+
+            switch (mainChoice) {
+                case "1":
+                    runGame(scanner, random);
+                    break;
+                case "2":
+                    openZorkdex(scanner);
+                    break;
+                case "3":
+                    System.out.println("Thanks for playing Zorkmon! Goodbye!");
+                    inApp = false;
+                    break;
+                default:
+                    System.out.println("Invalid choice! Please enter 1, 2, or 3.\n");
+                    break;
+            }
+        }
+
+        scanner.close();
+    }
+
+    private static void openZorkdex(Scanner scanner) {
+        boolean inZorkdex = true;
+        while (inZorkdex) {
+            System.out.println("\n--- ZORKDEX ---");
+            System.out.println("1. Display All Zorkdex Entries");
+            System.out.println("2. Search Zorkdex by Name");
+            System.out.println("3. Search Zorkdex by Number");
+            System.out.println("4. Filter Zorkdex by Type");
+            System.out.println("5. Return to Main Menu");
+            System.out.print("Choose an option > ");
+
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1":
+                    System.out.println("\n--- All Zorkdex Entries (#000 - #155) ---");
+                    for (ZorkdexEntry zorkdexEntry : ZorkdexEntry.getAllEntries()) {
+                        System.out.println(zorkdexEntry);
+                    }
+                    break;
+                case "2":
+                    System.out.print("Enter name to search in Zorkdex: ");
+                    String zorkdexSearchName = scanner.nextLine().trim();
+                    List<ZorkdexEntry> zorkdexNameMatches = ZorkdexEntry.getAllEntries().stream()
+                            .filter(p -> p.getName().equalsIgnoreCase(zorkdexSearchName))
+                            .collect(Collectors.toList());
+                    if (zorkdexNameMatches.isEmpty()) {
+                        System.out.println("No Zorkdex entry found matching: " + zorkdexSearchName);
+                    } else {
+                        zorkdexNameMatches.forEach(System.out::println);
+                    }
+                    break;
+                case "3":
+                    System.out.print("Enter Zorkdex number (000-155): ");
+                    try {
+                        int zorkdexNum = Integer.parseInt(scanner.nextLine().trim());
+                        ZorkdexEntry.getAllEntries().stream()
+                                .filter(p -> p.getId() == zorkdexNum)
+                                .findFirst()
+                                .ifPresentOrElse(
+                                        System.out::println,
+                                        () -> System.out.println("No Zorkdex entry with #" + String.format("%03d", zorkdexNum))
+                                );
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid number format!");
+                    }
+                    break;
+                case "4":
+                    System.out.print("Enter type (e.g. Fire, Dragon, Bug): ");
+                    String zorkdexType = scanner.nextLine().trim();
+                    List<ZorkdexEntry> zorkdexTypeMatches = ZorkdexEntry.getAllEntries().stream()
+                            .filter(p -> p.getPrimaryType().equalsIgnoreCase(zorkdexType) ||
+                                         (p.getSecondaryType() != null && p.getSecondaryType().equalsIgnoreCase(zorkdexType)))
+                            .collect(Collectors.toList());
+                    if (zorkdexTypeMatches.isEmpty()) {
+                        System.out.println("No Zorkdex entries found with type: " + zorkdexType);
+                    } else {
+                        System.out.printf("\n--- %s Type Zorkdex Entries (%d found) ---\n", zorkdexType, zorkdexTypeMatches.size());
+                        zorkdexTypeMatches.forEach(System.out::println);
+                    }
+                    break;
+                case "5":
+                    inZorkdex = false;
+                    System.out.println("Closing Zorkdex...\n");
+                    break;
+                default:
+                    System.out.println("Invalid choice! Please pick 1-5.");
+                    break;
+            }
+        }
+    }
+
+    private static void runGame(Scanner scanner, Random random) {
+        System.out.println("\n------------------------------------------------------------------");
+        System.out.println("                 STARTING ZORKMON ADVENTURE                       ");
+        System.out.println("------------------------------------------------------------------");
+
+        System.out.print("Hello there! Welcome to the world of Zorkmon! What is your name? ");
+        String playerName = scanner.nextLine().trim();
+        if (playerName.isEmpty()) {
+            playerName = "Hero";
+        }
+
+        String playerGender = "";
+        while (true) {
+            System.out.println("\nAre you:");
+            System.out.println("[1] Boy");
+            System.out.println("[2] Girl");
+            System.out.println("[3] Non-binary");
+            System.out.print("Selection > ");
+
+            String genderChoice = scanner.nextLine().trim();
+            if (genderChoice.equals("1") || genderChoice.equalsIgnoreCase("boy")) {
+                playerGender = "Boy";
+                break;
+            } else if (genderChoice.equals("2") || genderChoice.equalsIgnoreCase("girl")) {
+                playerGender = "Girl";
+                break;
+            } else if (genderChoice.equals("3") || genderChoice.equalsIgnoreCase("non-binary") || genderChoice.equalsIgnoreCase("nonbinary")) {
+                playerGender = "Non-binary";
+                break;
+            } else {
+                System.out.println("Invalid selection! Please choose 1, 2, or 3.");
+            }
+        }
+
+        System.out.print("\nAnd what is the name of your rival? ");
+        String rivalName = scanner.nextLine().trim();
+        if (rivalName.isEmpty()) {
+            rivalName = "Cheren";
+        }
+
+        System.out.println("\nWelcome, " + playerName + "! Your journey begins now alongside your rival, " + rivalName + "!");
+
+        ZorkmonPet player = chooseStarter(scanner);
+
+        List<ZorkmonPet> remainingStarters = new ArrayList<>();
+        if (!player.name.equals("Snivy")) {
+            remainingStarters.add(new ZorkmonPet("Snivy", "Grass", null, 5, 100, 20, 15, 62, Move.VINE_WHIP));
+        }
+        if (!player.name.equals("Tepig")) {
+            remainingStarters.add(new ZorkmonPet("Tepig", "Fire", null, 5, 85, 22, 12, 62, Move.EMBER));
+        }
+        if (!player.name.equals("Oshawott")) {
+            remainingStarters.add(new ZorkmonPet("Oshawott", "Water", null, 5, 110, 18, 14, 62, Move.WATER_GUN));
+        }
+
+        ZorkmonPet npc = remainingStarters.get(random.nextInt(remainingStarters.size()));
+
+        System.out.println("\nYou chose " + player.name + "!");
+        System.out.println(rivalName + " chose " + npc.name + "!");
+
+        String currentRoom = "Nuvema Town";
+        boolean itemFound = false;
+        boolean npcDefeated = false;
+
+        boolean running = true;
+        while (running) {
+            System.out.println("\n------------------------------------------------------------------");
+            System.out.println("[ Location: " + currentRoom + " ]");
+            System.out.println("Available Commands: 'look', 'map', 'go north', 'go south', 'go east', 'go west', 'search', 'check', 'challenge', or 'quit'");
+            System.out.print("> ");
+            String input = scanner.nextLine().trim().toLowerCase();
+
+            switch (input) {
+                case "look":
+                    describeRoom(currentRoom, npc, itemFound, npcDefeated, rivalName);
+                    break;
+
+                case "map":
+                    displayMap(currentRoom);
+                    break;
+
+                case "check":
+                    System.out.println("--- TRAINER STATUS ---");
+                    System.out.println("Trainer: " + playerName + " | Gender: " + playerGender);
+                    System.out.println("Partner: " + player.name + " (Lvl " + player.level + " " + player.getTypeDisplay() + " Type)");
+                    System.out.println("HP: " + player.hp + "/" + player.maxHp + " | Atk: " + player.attack + " | Def: " + player.defense);
+                    System.out.println("EXP: " + player.exp + " / " + player.expToNextLevel + " (Need " + (player.expToNextLevel - player.exp) + " more for Lvl " + (player.level + 1) + ")");
+                    break;
+
+                case "go north":
+                    if (currentRoom.equals("Nuvema Town")) {
+                        currentRoom = "Route 1";
+                        System.out.println("You walk north onto Route 1. Tall grass rustles nearby!");
+                    } else if (currentRoom.equals("Route 1")) {
+                        currentRoom = "Accumula Town";
+                        System.out.println("You head north into Accumula Town, a tranquil slope city.");
+                    } else if (currentRoom.equals("Accumula Town")) {
+                        currentRoom = "Relic Castle";
+                        System.out.println("You hike north toward the windswept ruins of Relic Castle.");
+                    } else {
+                        System.out.println("Dense trees and rocks block your path north.");
+                    }
+                    break;
+
+                case "go south":
+                    if (currentRoom.equals("Relic Castle")) {
+                        currentRoom = "Accumula Town";
+                        System.out.println("You walk back south to Accumula Town.");
+                    } else if (currentRoom.equals("Accumula Town")) {
+                        currentRoom = "Route 1";
+                        System.out.println("You head south back onto Route 1.");
+                    } else if (currentRoom.equals("Route 1")) {
+                        currentRoom = "Nuvema Town";
+                        System.out.println("You arrive back home in Nuvema Town.");
+                    } else {
+                        System.out.println("You look south, but ocean water stretches endlessly.");
+                    }
+                    break;
+
+                case "go east":
+                    if (currentRoom.equals("Route 1")) {
+                        currentRoom = "Pinwheel Forest";
+                        System.out.println("You step east into the misty canopy of Pinwheel Forest.");
+                    } else {
+                        System.out.println("You cannot go east from here.");
+                    }
+                    break;
+
+                case "go west":
+                    if (currentRoom.equals("Pinwheel Forest")) {
+                        currentRoom = "Route 1";
+                        System.out.println("You exit the forest and return to Route 1.");
+                    } else {
+                        System.out.println("You cannot go west from here.");
+                    }
+                    break;
+
+                case "search":
+                    if (currentRoom.equals("Route 1") || currentRoom.equals("Pinwheel Forest")) {
+                        if (!itemFound) {
+                            itemFound = true;
+                            player.hp = Math.min(player.maxHp, player.hp + 30);
+                            System.out.println("You search the tall grass and find an Oran Berry! " + player.name + " eats it and heals 30 HP.");
+                        } else {
+                            System.out.println("You search around, but find nothing else useful.");
+                        }
+                    } else {
+                        System.out.println("Nothing of interest to search here.");
+                    }
+                    break;
+
+                case "challenge":
+                case "talk":
+                    if (currentRoom.equals("Relic Castle")) {
+                        if (!npcDefeated) {
+                            npcDefeated = startBattle(player, npc, scanner, random, rivalName, playerGender, playerName);
+                            if (player.isFainted()) {
+                                System.out.println("\n" + player.name + " fainted... GAME OVER.");
+                                running = false;
+                            }
+                        } else {
+                            printRivalDefeatedDialogue(rivalName, playerGender, playerName, npc.name);
+                        }
+                    } else {
+                        System.out.println("There is no trainer here to challenge.");
+                    }
+                    break;
+
+                case "quit":
+                    System.out.println("Returning to Main Menu...\n");
+                    running = false;
+                    break;
+
+                default:
+                    System.out.println("Unknown command. Please try one of the commands listed above.");
+                    break;
+            }
+
+            if (running && !input.equals("quit") && !input.equals("challenge")) {
+                triggerWildEncounter(currentRoom, player, scanner, random);
+            }
+
+            if (npcDefeated && running) {
+                System.out.println("\n*** CONGRATULATIONS " + playerName.toUpperCase() + "! You defeated " + rivalName + " and conquered Unova! ***\n");
+                running = false;
+            }
+        }
+    }
+
+    private static void displayMap(String currentRoom) {
+        System.out.println("\n=================== UNOVA MAP ===================");
+        System.out.println(" [Relic Castle] " + (currentRoom.equals("Relic Castle") ? "<-- [YOU]" : ""));
+        System.out.println("       | ");
+        System.out.println(" [Accumula Town]" + (currentRoom.equals("Accumula Town") ? "<-- [YOU]" : ""));
+        System.out.println("       | ");
+        System.out.println("    [Route 1]   " + (currentRoom.equals("Route 1") ? "<-- [YOU]" : "") + " --- [Pinwheel Forest] " + (currentRoom.equals("Pinwheel Forest") ? "<-- [YOU]" : ""));
+        System.out.println("       | ");
+        System.out.println("  [Nuvema Town] " + (currentRoom.equals("Nuvema Town") ? "<-- [YOU]" : ""));
+        System.out.println("=================================================");
+    }
+
+    private static ZorkmonPet chooseStarter(Scanner scanner) {
+        while (true) {
+            System.out.println("\nChoose your Gen 5 starter Zorkmon:");
+            System.out.println("[1] Snivy (Grass)");
+            System.out.println("[2] Tepig (Fire)");
+            System.out.println("[3] Oshawott (Water)");
+            System.out.print("Selection > ");
+
+            String choice = scanner.nextLine().trim();
+
+            if (choice.equals("1") || choice.equalsIgnoreCase("snivy")) {
+                return new ZorkmonPet("Snivy", "Grass", null, 5, 100, 20, 15, 62, Move.VINE_WHIP);
+            } else if (choice.equals("2") || choice.equalsIgnoreCase("tepig")) {
+                return new ZorkmonPet("Tepig", "Fire", null, 5, 85, 22, 12, 62, Move.EMBER);
+            } else if (choice.equals("3") || choice.equalsIgnoreCase("oshawott")) {
+                return new ZorkmonPet("Oshawott", "Water", null, 5, 110, 18, 14, 62, Move.WATER_GUN);
+            } else {
+                System.out.println("Invalid selection! Please pick 1, 2, or 3.");
+            }
+        }
+    }
+
+    private static void describeRoom(String room, ZorkmonPet npc, boolean itemFound, boolean npcDefeated, String rivalName) {
+        switch (room) {
+            case "Nuvema Town":
+                System.out.println("A quiet rural town where your journey begins. Route 1 lies to the NORTH.");
+                break;
+            case "Route 1":
+                System.out.println("A scenic path with tall grass. NORTH leads to Accumula Town, EAST leads into Pinwheel Forest.");
+                if (!itemFound) {
+                    System.out.println("Something is glinting in the grass (try 'search').");
+                }
+                break;
+            case "Pinwheel Forest":
+                System.out.println("A dense forest full of wild Gen 5 Bug and Grass Zorkmon. Heading WEST leads back to Route 1.");
+                break;
+            case "Accumula Town":
+                System.out.println("A bustling hillside town. NORTH leads to the ancient Relic Castle, SOUTH returns to Route 1.");
+                break;
+            case "Relic Castle":
+                System.out.println("Deserted ancient ruins buried under sand. SOUTH leads back to Accumula Town.");
+                if (!npcDefeated) {
+                    System.out.println("Rival " + rivalName + " stands waiting with their " + npc.name + "! (try 'challenge')");
+                } else {
+                    System.out.println(rivalName + " sits resting after your intense battle.");
+                }
+                break;
+        }
+    }
+
+    private static void triggerWildEncounter(String room, ZorkmonPet player, Scanner scanner, Random random) {
+        if ((room.equals("Route 1") || room.equals("Pinwheel Forest")) && random.nextInt(6) == 0) {
+            ZorkmonPet wild;
+            if (room.equals("Route 1")) {
+                ZorkmonPet[] pool = {
+                    new ZorkmonPet("Patrat", "Normal", null, 3, 45, 12, 10, 51, Move.TACKLE),
+                    new ZorkmonPet("Lillipup", "Normal", null, 4, 50, 14, 11, 55, Move.BITE),
+                    new ZorkmonPet("Pidove", "Normal", "Flying", 3, 48, 13, 10, 53, Move.GUST)
+                };
+                wild = pool[random.nextInt(pool.length)];
+            } else {
+                ZorkmonPet[] pool = {
+                    new ZorkmonPet("Sewaddle", "Bug", "Grass", 4, 55, 15, 13, 62, Move.get("Bug Bite")),
+                    new ZorkmonPet("Venipede", "Bug", "Poison", 4, 60, 16, 12, 52, Move.get("Poison Tail")),
+                    new ZorkmonPet("Joltik", "Bug", "Electric", 5, 40, 18, 9, 64, Move.get("Electroweb"))
+                };
+                wild = pool[random.nextInt(pool.length)];
+            }
+
+            System.out.println("\n[!] A wild " + wild.name + " (" + wild.getTypeDisplay() + " Type) appeared!");
+            startBattle(player, wild, scanner, random, null, null, null);
+        }
+    }
+
+    private static boolean startBattle(ZorkmonPet player, ZorkmonPet opponent, Scanner scanner, Random random, String rivalName, String playerGender, String playerName) {
+        System.out.println("================ BATTLE START ================");
+        if (rivalName != null) {
+            printRivalBattleStartDialogue(rivalName, playerGender, playerName, opponent.name);
+        } else {
+            System.out.println("Battle against wild " + opponent.name + " (" + opponent.getTypeDisplay() + " Type)!");
+        }
+
+        while (!player.isFainted() && !opponent.isFainted()) {
+            System.out.println("\n" + player.name + " HP: " + player.hp + "/" + player.maxHp + " | " + opponent.name + " HP: " + opponent.hp + "/" + opponent.maxHp);
+            System.out.println("Choose move: [1] Tackle  [2] " + player.specialMove.getName() + " (" + player.specialMove.getType() + ")  [3] Run");
+            System.out.print("Battle > ");
+
+            String choice = scanner.nextLine().trim();
+
+            if (choice.equals("3") || choice.equalsIgnoreCase("run")) {
+                System.out.println("You fled back to safety!");
+                return false;
+            }
+
+            // Player Turn
+            int playerDamage = 0;
+            if (choice.equals("1") || choice.equalsIgnoreCase("tackle")) {
+                playerDamage = calculateFormulaDamage(player, opponent, Move.TACKLE, random);
+                System.out.println("\n" + player.name + " used Tackle!");
+            } else if (choice.equals("2") || choice.equalsIgnoreCase(player.specialMove.getName())) {
+                playerDamage = calculateFormulaDamage(player, opponent, player.specialMove, random);
+                
+                double typeMod = getFullTypeMultiplier(player.specialMove.getType(), opponent.primaryType, opponent.secondaryType);
+                System.out.print("\n" + player.name + " used " + player.specialMove.getName() + "! ");
+                if (typeMod > 1.0) {
+                    System.out.println("It's super effective!");
+                } else if (typeMod == 0.0) {
+                    System.out.println("It had no effect!");
+                } else if (typeMod < 1.0) {
+                    System.out.println("It's not very effective...");
+                } else {
+                    System.out.println();
+                }
+            } else {
+                System.out.println("Invalid choice! You stumbled and lost your turn!");
+            }
+
+            if (playerDamage > 0) {
+                opponent.hp = Math.max(0, opponent.hp - playerDamage);
+                System.out.println(opponent.name + " took " + playerDamage + " damage!");
+            }
+
+            if (opponent.isFainted()) {
+                System.out.println("\n" + opponent.name + " fainted! You won the battle!");
+                
+                int expGained = (opponent.baseExpYield * opponent.level) / 7;
+                player.gainExp(expGained);
+                return true;
+            }
+
+            // Opponent Turn
+            System.out.println("\n" + opponent.name + " attacks!");
+            int oppDamage = calculateFormulaDamage(opponent, player, opponent.specialMove, random);
+            
+            double oppTypeMod = getFullTypeMultiplier(opponent.specialMove.getType(), player.primaryType, player.secondaryType);
+            System.out.print(opponent.name + " used " + opponent.specialMove.getName() + "! ");
+            if (oppTypeMod > 1.0) {
+                System.out.println("It's super effective!");
+            } else if (oppTypeMod == 0.0) {
+                System.out.println("It had no effect!");
+            } else if (oppTypeMod < 1.0) {
+                System.out.println("It's not very effective...");
+            } else {
+                System.out.println();
+            }
+
+            player.hp = Math.max(0, player.hp - oppDamage);
+            System.out.println(player.name + " took " + oppDamage + " damage!");
+        }
+
+        return false;
+    }
+
+    private static void printRivalBattleStartDialogue(String rivalName, String playerGender, String playerName, String opponentName) {
+        if ("Boy".equalsIgnoreCase(playerGender)) {
+            System.out.println(rivalName + ": \"Alright, " + playerName + "! Let's see if you've got what it takes, man! Go, " + opponentName + "!\"");
+        } else if ("Girl".equalsIgnoreCase(playerGender)) {
+            System.out.println(rivalName + ": \"Hey " + playerName + "! I won't hold back just because we're friends! Go, " + opponentName + "!\"");
+        } else {
+            System.out.println(rivalName + ": \"Ready to battle, " + playerName + "? Let's test our strength together! Go, " + opponentName + "!\"");
+        }
+    }
+
+    private static void printRivalDefeatedDialogue(String rivalName, String playerGender, String playerName, String opponentName) {
+        if ("Boy".equalsIgnoreCase(playerGender)) {
+            System.out.println(rivalName + ": \"Good match, " + playerName + "! You really showed me your strength today.\"");
+        } else if ("Girl".equalsIgnoreCase(playerGender)) {
+            System.out.println(rivalName + ": \"Impressive as always, " + playerName + "! You and your Zorkmon make an incredible team.\"");
+        } else {
+            System.out.println(rivalName + ": \"That was an amazing battle, " + playerName + "! Your bond with your Zorkmon is unmatched.\"");
+        }
+    }
+
+    private static int calculateFormulaDamage(ZorkmonPet attacker, ZorkmonPet defender, Move move, Random random) {
+        int baseLevelCalc = (2 * attacker.level) / 5 + 2;
+        int basePowerCalc = (baseLevelCalc * move.getPower() * attacker.attack) / defender.defense;
+        int baseDamage = (basePowerCalc / 50) + 2;
+
+        boolean isCrit = random.nextInt(16) == 0;
+        double critical = isCrit ? 1.5 : 1.0;
+        if (isCrit) {
+            System.out.println("A critical hit!");
+        }
+
+        double randomRoll = (85 + random.nextInt(16)) / 100.0;
+        double stab = (attacker.primaryType.equalsIgnoreCase(move.getType()) || (attacker.secondaryType != null && attacker.secondaryType.equalsIgnoreCase(move.getType()))) ? 1.5 : 1.0;
+        double type = getFullTypeMultiplier(move.getType(), defender.primaryType, defender.secondaryType);
+
+        double finalDamage = baseDamage * critical * randomRoll * stab * type;
+        return Math.max(1, (int) finalDamage);
+    }
+
+    private static double getFullTypeMultiplier(String moveType, String defType1, String defType2) {
+        double mult = getSingleTypeMultiplier(moveType, defType1);
+        if (defType2 != null) {
+            mult *= getSingleTypeMultiplier(moveType, defType2);
+        }
+        return mult;
+    }
+
+    private static double getSingleTypeMultiplier(String attacker, String defender) {
+        if (attacker == null || defender == null) return 1.0;
+        attacker = attacker.trim();
+        defender = defender.trim();
+
+        switch (attacker) {
+            case "Normal":
+                if (defender.equals("Rock") || defender.equals("Steel")) return 0.5;
+                if (defender.equals("Ghost")) return 0.0;
+                break;
+            case "Fire":
+                if (defender.equals("Grass") || defender.equals("Ice") || defender.equals("Bug") || defender.equals("Steel")) return 2.0;
+                if (defender.equals("Fire") || defender.equals("Water") || defender.equals("Rock") || defender.equals("Dragon")) return 0.5;
+                break;
+            case "Water":
+                if (defender.equals("Fire") || defender.equals("Ground") || defender.equals("Rock")) return 2.0;
+                if (defender.equals("Water") || defender.equals("Grass") || defender.equals("Dragon")) return 0.5;
+                break;
+            case "Grass":
+                if (defender.equals("Water") || defender.equals("Ground") || defender.equals("Rock")) return 2.0;
+                if (defender.equals("Fire") || defender.equals("Grass") || defender.equals("Poison") || defender.equals("Flying") || defender.equals("Bug") || defender.equals("Dragon") || defender.equals("Steel")) return 0.5;
+                break;
+            case "Electric":
+                if (defender.equals("Water") || defender.equals("Flying")) return 2.0;
+                if (defender.equals("Electric") || defender.equals("Grass") || defender.equals("Dragon")) return 0.5;
+                if (defender.equals("Ground")) return 0.0;
+                break;
+            case "Ice":
+                if (defender.equals("Grass") || defender.equals("Ground") || defender.equals("Flying") || defender.equals("Dragon")) return 2.0;
+                if (defender.equals("Fire") || defender.equals("Water") || defender.equals("Ice") || defender.equals("Steel")) return 0.5;
+                break;
+            case "Fighting":
+                if (defender.equals("Normal") || defender.equals("Ice") || defender.equals("Rock") || defender.equals("Dark") || defender.equals("Steel")) return 2.0;
+                if (defender.equals("Poison") || defender.equals("Flying") || defender.equals("Psychic") || defender.equals("Bug")) return 0.5;
+                if (defender.equals("Ghost")) return 0.0;
+                break;
+            case "Poison":
+                if (defender.equals("Grass")) return 2.0;
+                if (defender.equals("Poison") || defender.equals("Ground") || defender.equals("Rock") || defender.equals("Ghost")) return 0.5;
+                if (defender.equals("Steel")) return 0.0;
+                break;
+            case "Ground":
+                if (defender.equals("Fire") || defender.equals("Electric") || defender.equals("Poison") || defender.equals("Rock") || defender.equals("Steel")) return 2.0;
+                if (defender.equals("Grass") || defender.equals("Bug")) return 0.5;
+                if (defender.equals("Flying")) return 0.0;
+                break;
+            case "Flying":
+                if (defender.equals("Grass") || defender.equals("Fighting") || defender.equals("Bug")) return 2.0;
+                if (defender.equals("Electric") || defender.equals("Rock") || defender.equals("Steel")) return 0.5;
+                break;
+            case "Psychic":
+                if (defender.equals("Fighting") || defender.equals("Poison")) return 2.0;
+                if (defender.equals("Psychic") || defender.equals("Steel")) return 0.5;
+                if (defender.equals("Dark")) return 0.0;
+                break;
+            case "Bug":
+                if (defender.equals("Grass") || defender.equals("Psychic") || defender.equals("Dark")) return 2.0;
+                if (defender.equals("Fire") || defender.equals("Fighting") || defender.equals("Poison") || defender.equals("Flying") || defender.equals("Ghost") || defender.equals("Steel")) return 0.5;
+                break;
+            case "Rock":
+                if (defender.equals("Fire") || defender.equals("Ice") || defender.equals("Flying") || defender.equals("Bug")) return 2.0;
+                if (defender.equals("Fighting") || defender.equals("Ground") || defender.equals("Steel")) return 0.5;
+                break;
+            case "Ghost":
+                if (defender.equals("Psychic") || defender.equals("Ghost")) return 2.0;
+                if (defender.equals("Dark")) return 0.5;
+                if (defender.equals("Normal")) return 0.0;
+                break;
+            case "Dragon":
+                if (defender.equals("Dragon")) return 2.0;
+                if (defender.equals("Steel")) return 0.5;
+                break;
+            case "Steel":
+                if (defender.equals("Ice") || defender.equals("Rock")) return 2.0;
+                if (defender.equals("Fire") || defender.equals("Water") || defender.equals("Electric") || defender.equals("Steel")) return 0.5;
+                break;
+            case "Dark":
+                if (defender.equals("Psychic") || defender.equals("Ghost")) return 2.0;
+                if (defender.equals("Fighting") || defender.equals("Dark")) return 0.5;
+                break;
+        }
+        return 1.0;
+    }
+}
