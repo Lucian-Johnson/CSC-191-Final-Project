@@ -11,20 +11,45 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * ZorkdexData serves as the static data repository for the Zorkmon game.
+ * It contains:
+ * <ul>
+ *   <li>The {@link Move} inner class managing move definitions, types, categories, powers, and accuracies.</li>
+ *   <li>The complete Generations 1 through 5 move database (555 moves).</li>
+ *   <li>The {@link ZorkdexEntry} inner class representing Unova Pokédex entries (#000 to #155).</li>
+ * </ul>
+ * 
  * @author lucia
  */
 public class ZorkdexData {
 
-    // --- MOVE CLASS & COMPLETE GEN 1-5 REGISTRY (555 MOVES) ---
+    // =========================================================================
+    // MOVE CLASS & GENERATION 1-5 MOVE REGISTRY
+    // =========================================================================
+
+    /**
+     * Represents a combat move usable by a Zorkmon in battle.
+     * Includes static registry lookup and predefined move shortcuts.
+     */
     public static class Move {
+        /** Global registry mapping normalized move names to Move instances. */
         private static final Map<String, Move> REGISTRY = new HashMap<>();
 
         private final String name;
         private final String type;
-        private final String category;
+        private final String category; // "Physical", "Special", or "Status"
         private final int power;
         private final int accuracy;
 
+        /**
+         * Constructs a Move instance.
+         *
+         * @param name     the displayed name of the move
+         * @param type     the elemental type (e.g., "Fire", "Grass", "Water")
+         * @param category the move category ("Physical", "Special", or "Status")
+         * @param power    base power of the move (0 for status moves)
+         * @param accuracy accuracy percentage (1–100)
+         */
         public Move(String name, String type, String category, int power, int accuracy) {
             this.name = name;
             this.type = type;
@@ -33,22 +58,33 @@ public class ZorkdexData {
             this.accuracy = accuracy;
         }
 
+        // --- Getters ---
         public String getName() { return name; }
         public String getType() { return type; }
         public String getCategory() { return category; }
         public int getPower() { return power; }
         public int getAccuracy() { return accuracy; }
 
+        /**
+         * Registers a move into the static global registry using a normalized name key.
+         */
         public static void register(String name, String type, String category, int power, int accuracy) {
             REGISTRY.put(name.toLowerCase().replaceAll("[^a-z0-9]", ""), new Move(name, type, category, power, accuracy));
         }
 
+        /**
+         * Retrieves a move from the static registry by name.
+         * Defaults to "Tackle" if the requested move is not found.
+         *
+         * @param name the move name to query
+         * @return matching Move instance or standard Tackle as fallback
+         */
         public static Move get(String name) {
             String key = name.toLowerCase().replaceAll("[^a-z0-9]", "");
             return REGISTRY.getOrDefault(key, REGISTRY.get("tackle"));
         }
 
-        // Standard Move Shortcuts
+        // --- Standard Move Shortcuts for Quick Reference ---
         public static final Move TACKLE = new Move("Tackle", "Normal", "Physical", 50, 100);
         public static final Move VINE_WHIP = new Move("Vine Whip", "Grass", "Physical", 45, 100);
         public static final Move EMBER = new Move("Ember", "Fire", "Special", 40, 100);
@@ -63,6 +99,9 @@ public class ZorkdexData {
             initGen1to5MovePool();
         }
 
+        /**
+         * Populates the static registry with moves across Gens 1-5.
+         */
         private static void initGen1to5MovePool() {
             String[][] moves = {
                 {"Pound", "Normal", "Physical", "40", "100"}, {"Karate Chop", "Fighting", "Physical", "52", "100"},
@@ -172,7 +211,13 @@ public class ZorkdexData {
         }
     }
 
-    // --- FULL ZORKDEX CLASS & ALL 156 GEN 5 UNOVA ENTRIES (#000 - #155) ---
+    // =========================================================================
+    // FULL ZORKDEX CLASS & ALL 156 GEN 5 UNOVA ENTRIES (#000 - #155)
+    // =========================================================================
+
+    /**
+     * Represents a single entry in the Unova Zorkdex registry (#000 to #155).
+     */
     public static class ZorkdexEntry {
         private static final List<ZorkdexEntry> FULL_DEX = new ArrayList<>();
 
@@ -181,6 +226,14 @@ public class ZorkdexData {
         private final String primaryType;
         private final String secondaryType;
 
+        /**
+         * Constructs a ZorkdexEntry.
+         *
+         * @param id            the Unova regional dex ID number (0–155)
+         * @param name          species name
+         * @param primaryType   primary elemental type
+         * @param secondaryType secondary elemental type (or null if mono-type)
+         */
         public ZorkdexEntry(int id, String name, String primaryType, String secondaryType) {
             this.id = id;
             this.name = name;
@@ -188,6 +241,7 @@ public class ZorkdexData {
             this.secondaryType = secondaryType;
         }
 
+        // --- Getters ---
         public int getId() { return id; }
         public String getName() { return name; }
         public String getPrimaryType() { return primaryType; }
@@ -199,6 +253,9 @@ public class ZorkdexData {
             return String.format("#%03d - %-12s [%s]", id, name, typeStr);
         }
 
+        /**
+         * @return unmodifiable view or direct reference to the full Zorkdex list
+         */
         public static List<ZorkdexEntry> getAllEntries() {
             return FULL_DEX;
         }
@@ -207,6 +264,9 @@ public class ZorkdexData {
             initUnovaPokedex();
         }
 
+        /**
+         * Populates the static list of all 156 Unova Zorkdex entries.
+         */
         private static void initUnovaPokedex() {
             Object[][] dex = {
                 {0, "Victini", "Psychic", "Fire"}, {1, "Snivy", "Grass", null}, {2, "Servine", "Grass", null},
