@@ -14,11 +14,30 @@ import zorkmon.ZorkdexData.Move;
 import zorkmon.ZorkdexData.ZorkdexEntry;
 
 /**
+ * Zorkmon: Unova Edition — Main Game Engine & Controller.
+ * <p>
+ * Implements a command-line RPG featuring:
+ * <ul>
+ *   <li>Professor Juniper story introduction & starter selection</li>
+ *   <li>Turn-based combat with damage formula calculation, critical hits, STAB, and full 17-type chart match-ups</li>
+ *   <li>Generation III/IV modified capture formula mechanics ($a$ &amp; $b$ threshold shake checks)</li>
+ *   <li>In-battle and field Zorkmon switching across the player's active party</li>
+ *   <li>Economy system (Money, ZorkMart, ZorkCenter healing, and item purchasing)</li>
+ *   <li>Zorkdex viewer with search and filtering capabilities</li>
+ * </ul>
+ * 
  * @author lucia
  */
 public class Zorkmon {
 
-    // Active Zorkmon Class featuring EXP & Leveling
+    // =========================================================================
+    // ACTIVE ZORKMON CLASS
+    // =========================================================================
+
+    /**
+     * Represents an individual Zorkmon creature instance in combat or party storage.
+     * Tracks stats, level progression, experience points, species catch rates, and special move sets.
+     */
     static class ZorkmonPet {
         String name;
         String primaryType;
@@ -31,9 +50,13 @@ public class Zorkmon {
         int exp;
         int expToNextLevel;
         int baseExpYield;
+        int catchRate; // Base species catch rate (e.g., Patrat = 255, Joltik = 190)
         Move specialMove;
 
-        ZorkmonPet(String name, String primaryType, String secondaryType, int level, int hp, int attack, int defense, int baseExpYield, Move specialMove) {
+        /**
+         * Constructs a new active ZorkmonPet.
+         */
+        ZorkmonPet(String name, String primaryType, String secondaryType, int level, int hp, int attack, int defense, int baseExpYield, int catchRate, Move specialMove) {
             this.name = name;
             this.primaryType = primaryType;
             this.secondaryType = secondaryType;
@@ -43,23 +66,38 @@ public class Zorkmon {
             this.attack = attack;
             this.defense = defense;
             this.baseExpYield = baseExpYield;
+            this.catchRate = catchRate;
             this.exp = 0;
             this.expToNextLevel = calculateExpForLevel(level + 1);
             this.specialMove = specialMove;
         }
 
+        /**
+         * @return true if the Zorkmon has lost all HP
+         */
         boolean isFainted() {
             return this.hp <= 0;
         }
 
+        /**
+         * Formats primary and secondary types for display output.
+         */
         String getTypeDisplay() {
             return secondaryType == null ? primaryType : primaryType + "/" + secondaryType;
         }
 
+        /**
+         * Calculates total cumulative EXP required to reach a specific level using the cubic curve ($level^3$).
+         */
         private static int calculateExpForLevel(int lvl) {
             return lvl * lvl * lvl;
         }
 
+        /**
+         * Awards experience points to this Zorkmon and triggers level ups if thresholds are reached.
+         *
+         * @param gainedExp total EXP earned from defeating or catching an opponent
+         */
         public void gainExp(int gainedExp) {
             this.exp += gainedExp;
             System.out.println(this.name + " gained " + gainedExp + " EXP! (" + this.exp + "/" + this.expToNextLevel + " EXP)");
@@ -69,6 +107,9 @@ public class Zorkmon {
             }
         }
 
+        /**
+         * Advances the Zorkmon by 1 level, boosting stats and fully restoring HP.
+         */
         private void levelUp() {
             this.level++;
             this.expToNextLevel = calculateExpForLevel(this.level + 1);
@@ -85,6 +126,10 @@ public class Zorkmon {
             System.out.println("------------------------------------------------------------------");
         }
     }
+
+    // =========================================================================
+    // MAIN ENTRY POINT & MAIN MENU
+    // =========================================================================
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -123,6 +168,13 @@ public class Zorkmon {
         scanner.close();
     }
 
+    // =========================================================================
+    // ZORKDEX MENU CONTROLLER
+    // =========================================================================
+
+    /**
+     * Manages interactive Zorkdex browsing (listing all, searching by name/ID, filtering by type).
+     */
     private static void openZorkdex(Scanner scanner) {
         boolean inZorkdex = true;
         while (inZorkdex) {
@@ -195,20 +247,33 @@ public class Zorkmon {
         }
     }
 
+    // =========================================================================
+    // GAME ENGINE & MAIN GAME LOOP
+    // =========================================================================
+
+    /**
+     * Executes the main gameplay loop: intro sequence, navigation, field interaction, and combat triggers.
+     */
     private static void runGame(Scanner scanner, Random random) {
         System.out.println("\n------------------------------------------------------------------");
         System.out.println("                 STARTING ZORKMON ADVENTURE                       ");
         System.out.println("------------------------------------------------------------------");
 
-        System.out.print("Hello there! Welcome to the world of Zorkmon! What is your name? ");
+        // --- PROFESSOR JUNIPER INTRO DIALOGUE ---
+        System.out.println("Professor Juniper: \"Hello there! Welcome to the world of Zorkmon!\"");
+        System.out.println("Professor Juniper: \"My name is Professor Juniper. People call me the Zorkmon Professor!\"");
+        System.out.println("Professor Juniper: \"This world is inhabited by creatures known as Zorkmon, living alongside humans as friends and partners.\"");
+
+        System.out.print("\nProfessor Juniper: \"First, tell me... what is your name?\" > ");
         String playerName = scanner.nextLine().trim();
         if (playerName.isEmpty()) {
             playerName = "Hero";
         }
 
+        // Gender Selection Dialogue
         String playerGender = "";
         while (true) {
-            System.out.println("\nAre you:");
+            System.out.println("\nProfessor Juniper: \"Are you a boy, a girl, or non-binary?\"");
             System.out.println("[1] Boy");
             System.out.println("[2] Girl");
             System.out.println("[3] Non-binary");
@@ -229,41 +294,58 @@ public class Zorkmon {
             }
         }
 
-        System.out.print("\nAnd what is the name of your rival? ");
+        System.out.print("\nProfessor Juniper: \"And what is the name of your rival?\" > ");
         String rivalName = scanner.nextLine().trim();
         if (rivalName.isEmpty()) {
             rivalName = "Cheren";
         }
 
-        System.out.println("\nWelcome, " + playerName + "! Your journey begins now alongside your rival, " + rivalName + "!");
+        System.out.println("\nProfessor Juniper: \"Right! So your name is " + playerName + ", and your rival is " + rivalName + "!\"");
+        System.out.println("Professor Juniper: \"Your very own Zorkmon legend is about to unfold!\"");
 
-        ZorkmonPet player = chooseStarter(scanner);
+        // Starter Selection & Initial Party Setup
+        ZorkmonPet starter = chooseStarter(scanner);
+        List<ZorkmonPet> party = new ArrayList<>();
+        party.add(starter);
 
+        // Determine Rival's Starter based on remaining choices
         List<ZorkmonPet> remainingStarters = new ArrayList<>();
-        if (!player.name.equals("Snivy")) {
-            remainingStarters.add(new ZorkmonPet("Snivy", "Grass", null, 5, 100, 20, 15, 62, Move.VINE_WHIP));
+        if (!starter.name.equals("Snivy")) {
+            remainingStarters.add(new ZorkmonPet("Snivy", "Grass", null, 5, 100, 20, 15, 62, 45, Move.VINE_WHIP));
         }
-        if (!player.name.equals("Tepig")) {
-            remainingStarters.add(new ZorkmonPet("Tepig", "Fire", null, 5, 85, 22, 12, 62, Move.EMBER));
+        if (!starter.name.equals("Tepig")) {
+            remainingStarters.add(new ZorkmonPet("Tepig", "Fire", null, 5, 85, 22, 12, 62, 45, Move.EMBER));
         }
-        if (!player.name.equals("Oshawott")) {
-            remainingStarters.add(new ZorkmonPet("Oshawott", "Water", null, 5, 110, 18, 14, 62, Move.WATER_GUN));
+        if (!starter.name.equals("Oshawott")) {
+            remainingStarters.add(new ZorkmonPet("Oshawott", "Water", null, 5, 110, 18, 14, 62, 45, Move.WATER_GUN));
         }
 
         ZorkmonPet npc = remainingStarters.get(random.nextInt(remainingStarters.size()));
 
-        System.out.println("\nYou chose " + player.name + "!");
+        System.out.println("\nYou chose " + starter.name + "!");
         System.out.println(rivalName + " chose " + npc.name + "!");
+
+        // Professor Juniper Gift & Economy Initialization
+        int[] zorkBalls = {10}; // Pass-by-reference array wrapper for Zork Balls
+        int[] potions = {1};     // Pass-by-reference array wrapper for Potions
+        int[] money = {1000};    // Starts with $1000 starting cash
+
+        System.out.println("\nProfessor Juniper: \"Before you head out on Route 1, take these! They will help you catch wild Zorkmon.\"");
+        System.out.println(">>> Professor Juniper handed you 10 Zork Balls and $1000! <<<");
+        System.out.println("Professor Juniper: \"Good luck, " + playerName + "! Go explore the Unova region!\"\n");
 
         String currentRoom = "Nuvema Town";
         boolean itemFound = false;
         boolean npcDefeated = false;
+        int activeIndex = 0; // Tracks lead active Zorkmon index in party
 
         boolean running = true;
         while (running) {
+            ZorkmonPet activePet = party.get(activeIndex);
+
             System.out.println("\n------------------------------------------------------------------");
             System.out.println("[ Location: " + currentRoom + " ]");
-            System.out.println("Available Commands: 'look', 'map', 'go north', 'go south', 'go east', 'go west', 'search', 'check', 'challenge', or 'quit'");
+            System.out.println("Available Commands: 'look', 'map', 'go north', 'go south', 'go east', 'go west', 'search', 'check', 'switch', 'center', 'mart', 'challenge', or 'quit'");
             System.out.print("> ");
             String input = scanner.nextLine().trim().toLowerCase();
 
@@ -279,9 +361,43 @@ public class Zorkmon {
                 case "check":
                     System.out.println("--- TRAINER STATUS ---");
                     System.out.println("Trainer: " + playerName + " | Gender: " + playerGender);
-                    System.out.println("Partner: " + player.name + " (Lvl " + player.level + " " + player.getTypeDisplay() + " Type)");
-                    System.out.println("HP: " + player.hp + "/" + player.maxHp + " | Atk: " + player.attack + " | Def: " + player.defense);
-                    System.out.println("EXP: " + player.exp + " / " + player.expToNextLevel + " (Need " + (player.expToNextLevel - player.exp) + " more for Lvl " + (player.level + 1) + ")");
+                    System.out.println("Money: $" + money[0]);
+                    System.out.println("Active Partner: " + activePet.name + " (Lvl " + activePet.level + " " + activePet.getTypeDisplay() + " Type)");
+                    System.out.println("HP: " + activePet.hp + "/" + activePet.maxHp + " | Atk: " + activePet.attack + " | Def: " + activePet.defense);
+                    System.out.println("EXP: " + activePet.exp + " / " + activePet.expToNextLevel + " (Need " + (activePet.expToNextLevel - activePet.exp) + " more for Lvl " + (activePet.level + 1) + ")");
+                    System.out.println("Inventory: " + zorkBalls[0] + "x Zork Balls | " + potions[0] + "x Potions");
+
+                    System.out.println("\n--- PARTY / ZORKMON STORAGE (" + party.size() + ") ---");
+                    for (int i = 0; i < party.size(); i++) {
+                        ZorkmonPet pet = party.get(i);
+                        String activeTag = (i == activeIndex) ? " [ACTIVE]" : "";
+                        String faintedTag = pet.isFainted() ? " (FAINTED)" : "";
+                        System.out.println("[" + (i + 1) + "] " + pet.name + " - Lvl " + pet.level + " " + pet.getTypeDisplay() + " | HP: " + pet.hp + "/" + pet.maxHp + activeTag + faintedTag);
+                    }
+                    break;
+
+                case "switch":
+                    activeIndex = handleFieldSwitch(party, activeIndex, scanner);
+                    break;
+
+                case "center":
+                case "pokecenter":
+                case "zorkcenter":
+                    if (currentRoom.equals("Accumula Town") || currentRoom.equals("Nuvema Town")) {
+                        visitZorkCenter(party);
+                    } else {
+                        System.out.println("There is no ZorkCenter in " + currentRoom + ". Visit Nuvema Town or Accumula Town!");
+                    }
+                    break;
+
+                case "mart":
+                case "pokemart":
+                case "zorkmart":
+                    if (currentRoom.equals("Accumula Town")) {
+                        visitZorkMart(money, zorkBalls, potions, scanner);
+                    } else {
+                        System.out.println("There is no ZorkMart in " + currentRoom + ". Visit Accumula Town!");
+                    }
                     break;
 
                 case "go north":
@@ -336,8 +452,8 @@ public class Zorkmon {
                     if (currentRoom.equals("Route 1") || currentRoom.equals("Pinwheel Forest")) {
                         if (!itemFound) {
                             itemFound = true;
-                            player.hp = Math.min(player.maxHp, player.hp + 30);
-                            System.out.println("You search the tall grass and find an Oran Berry! " + player.name + " eats it and heals 30 HP.");
+                            activePet.hp = Math.min(activePet.maxHp, activePet.hp + 30);
+                            System.out.println("You search the tall grass and find an Oran Berry! " + activePet.name + " eats it and heals 30 HP.");
                         } else {
                             System.out.println("You search around, but find nothing else useful.");
                         }
@@ -350,9 +466,9 @@ public class Zorkmon {
                 case "talk":
                     if (currentRoom.equals("Relic Castle")) {
                         if (!npcDefeated) {
-                            npcDefeated = startBattle(player, npc, scanner, random, rivalName, playerGender, playerName);
-                            if (player.isFainted()) {
-                                System.out.println("\n" + player.name + " fainted... GAME OVER.");
+                            npcDefeated = startBattle(party, activeIndex, npc, scanner, random, rivalName, playerGender, playerName, zorkBalls, money, true);
+                            if (allFainted(party)) {
+                                System.out.println("\nAll your Zorkmon have fainted... GAME OVER.");
                                 running = false;
                             }
                         } else {
@@ -374,7 +490,7 @@ public class Zorkmon {
             }
 
             if (running && !input.equals("quit") && !input.equals("challenge")) {
-                triggerWildEncounter(currentRoom, player, scanner, random);
+                triggerWildEncounter(currentRoom, party, activeIndex, scanner, random, zorkBalls, money);
             }
 
             if (npcDefeated && running) {
@@ -384,18 +500,138 @@ public class Zorkmon {
         }
     }
 
+    // =========================================================================
+    // TOWN FACILITIES (ZORKCENTER & ZORKMART)
+    // =========================================================================
+
+    /**
+     * Fully restores HP for all Zorkmon in the player's party.
+     */
+    private static void visitZorkCenter(List<ZorkmonPet> party) {
+        System.out.println("\n================ ZORKMON CENTER ================");
+        System.out.println("Nurse Joy: \"Welcome to the Zorkmon Center! We restore your tired Zorkmon to full health.\"");
+        System.out.println("Nurse Joy takes your party...");
+        for (ZorkmonPet pet : party) {
+            pet.hp = pet.maxHp;
+        }
+        System.out.println("Ding-ding-ding-ding-ding!");
+        System.out.println("Nurse Joy: \"Thank you for waiting! Your Zorkmon are fully rested and healed to Max HP!\"");
+        System.out.println("================================================\n");
+    }
+
+    /**
+     * Interactive shop interface for purchasing Zork Balls ($200) and Potions ($300).
+     */
+    private static void visitZorkMart(int[] money, int[] zorkBalls, int[] potions, Scanner scanner) {
+        boolean inMart = true;
+        while (inMart) {
+            System.out.println("\n=================== ZORKMART ===================");
+            System.out.println("Clerk: \"Welcome to the ZorkMart! How can I help you today?\"");
+            System.out.println("Your Wallet: $" + money[0]);
+            System.out.println("1. Zork Ball  - $200 (Catches wild Zorkmon)");
+            System.out.println("2. Potion     - $300 (Restores 20 HP in battle)");
+            System.out.println("3. Exit ZorkMart");
+            System.out.print("Select an option > ");
+
+            String choice = scanner.nextLine().trim();
+            switch (choice) {
+                case "1":
+                    if (money[0] >= 200) {
+                        money[0] -= 200;
+                        zorkBalls[0]++;
+                        System.out.println("Bought 1x Zork Ball! (Remaining Money: $" + money[0] + ", Total Zork Balls: " + zorkBalls[0] + ")");
+                    } else {
+                        System.out.println("Clerk: \"Sorry, you don't have enough money for a Zork Ball!\"");
+                    }
+                    break;
+                case "2":
+                    if (money[0] >= 300) {
+                        money[0] -= 300;
+                        potions[0]++;
+                        System.out.println("Bought 1x Potion! (Remaining Money: $" + money[0] + ", Total Potions: " + potions[0] + ")");
+                    } else {
+                        System.out.println("Clerk: \"Sorry, you don't have enough money for a Potion!\"");
+                    }
+                    break;
+                case "3":
+                    System.out.println("Clerk: \"Please come again!\"");
+                    inMart = false;
+                    break;
+                default:
+                    System.out.println("Invalid selection!");
+                    break;
+            }
+        }
+    }
+
+    // =========================================================================
+    // FIELD & PARTY MANAGEMENT
+    // =========================================================================
+
+    /**
+     * Handles switching the active leading Zorkmon while exploring the overworld.
+     */
+    private static int handleFieldSwitch(List<ZorkmonPet> party, int currentActiveIndex, Scanner scanner) {
+        if (party.size() <= 1) {
+            System.out.println("You only have 1 Zorkmon in your team! Catch more wild Zorkmon to switch.");
+            return currentActiveIndex;
+        }
+
+        System.out.println("\n--- SELECT ZORKMON TO SWITCH TO ---");
+        for (int i = 0; i < party.size(); i++) {
+            ZorkmonPet pet = party.get(i);
+            String statusStr = (i == currentActiveIndex) ? " [CURRENT ACTIVE]" : "";
+            if (pet.isFainted()) statusStr += " (FAINTED)";
+            System.out.println("[" + (i + 1) + "] " + pet.name + " (Lvl " + pet.level + " " + pet.getTypeDisplay() + " | HP: " + pet.hp + "/" + pet.maxHp + ")" + statusStr);
+        }
+        System.out.print("Select Zorkmon number (or 0 to cancel) > ");
+        try {
+            int sel = Integer.parseInt(scanner.nextLine().trim());
+            if (sel > 0 && sel <= party.size()) {
+                int targetIdx = sel - 1;
+                if (targetIdx == currentActiveIndex) {
+                    System.out.println(party.get(targetIdx).name + " is already active!");
+                } else if (party.get(targetIdx).isFainted()) {
+                    System.out.println(party.get(targetIdx).name + " is fainted and cannot battle!");
+                } else {
+                    System.out.println("Switched leading Zorkmon to " + party.get(targetIdx).name + "!");
+                    return targetIdx;
+                }
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid selection!");
+        }
+        return currentActiveIndex;
+    }
+
+    /**
+     * @return true if every Zorkmon in the player's party is fainted
+     */
+    private static boolean allFainted(List<ZorkmonPet> party) {
+        for (ZorkmonPet pet : party) {
+            if (!pet.isFainted()) return false;
+        }
+        return true;
+    }
+
+    /**
+     * Displays an ASCII map of Unova with player position markers.
+     */
     private static void displayMap(String currentRoom) {
         System.out.println("\n=================== UNOVA MAP ===================");
         System.out.println(" [Relic Castle] " + (currentRoom.equals("Relic Castle") ? "<-- [YOU]" : ""));
         System.out.println("       | ");
-        System.out.println(" [Accumula Town]" + (currentRoom.equals("Accumula Town") ? "<-- [YOU]" : ""));
+        System.out.println(" [Accumula Town] (Center & Mart) " + (currentRoom.equals("Accumula Town") ? "<-- [YOU]" : ""));
         System.out.println("       | ");
         System.out.println("    [Route 1]   " + (currentRoom.equals("Route 1") ? "<-- [YOU]" : "") + " --- [Pinwheel Forest] " + (currentRoom.equals("Pinwheel Forest") ? "<-- [YOU]" : ""));
         System.out.println("       | ");
-        System.out.println("  [Nuvema Town] " + (currentRoom.equals("Nuvema Town") ? "<-- [YOU]" : ""));
+        System.out.println("  [Nuvema Town]  (Center) " + (currentRoom.equals("Nuvema Town") ? "<-- [YOU]" : ""));
         System.out.println("=================================================");
     }
 
+    /**
+     * Interactive starter Zorkmon selection menu.
+     */
     private static ZorkmonPet chooseStarter(Scanner scanner) {
         while (true) {
             System.out.println("\nChoose your Gen 5 starter Zorkmon:");
@@ -407,21 +643,24 @@ public class Zorkmon {
             String choice = scanner.nextLine().trim();
 
             if (choice.equals("1") || choice.equalsIgnoreCase("snivy")) {
-                return new ZorkmonPet("Snivy", "Grass", null, 5, 100, 20, 15, 62, Move.VINE_WHIP);
+                return new ZorkmonPet("Snivy", "Grass", null, 5, 100, 20, 15, 62, 45, Move.VINE_WHIP);
             } else if (choice.equals("2") || choice.equalsIgnoreCase("tepig")) {
-                return new ZorkmonPet("Tepig", "Fire", null, 5, 85, 22, 12, 62, Move.EMBER);
+                return new ZorkmonPet("Tepig", "Fire", null, 5, 85, 22, 12, 62, 45, Move.EMBER);
             } else if (choice.equals("3") || choice.equalsIgnoreCase("oshawott")) {
-                return new ZorkmonPet("Oshawott", "Water", null, 5, 110, 18, 14, 62, Move.WATER_GUN);
+                return new ZorkmonPet("Oshawott", "Water", null, 5, 110, 18, 14, 62, 45, Move.WATER_GUN);
             } else {
                 System.out.println("Invalid selection! Please pick 1, 2, or 3.");
             }
         }
     }
 
+    /**
+     * Prints text descriptions for the current overworld location.
+     */
     private static void describeRoom(String room, ZorkmonPet npc, boolean itemFound, boolean npcDefeated, String rivalName) {
         switch (room) {
             case "Nuvema Town":
-                System.out.println("A quiet rural town where your journey begins. Route 1 lies to the NORTH.");
+                System.out.println("A quiet rural town with a ZorkCenter. Route 1 lies to the NORTH.");
                 break;
             case "Route 1":
                 System.out.println("A scenic path with tall grass. NORTH leads to Accumula Town, EAST leads into Pinwheel Forest.");
@@ -433,7 +672,7 @@ public class Zorkmon {
                 System.out.println("A dense forest full of wild Gen 5 Bug and Grass Zorkmon. Heading WEST leads back to Route 1.");
                 break;
             case "Accumula Town":
-                System.out.println("A bustling hillside town. NORTH leads to the ancient Relic Castle, SOUTH returns to Route 1.");
+                System.out.println("A bustling hillside town featuring a ZorkCenter and ZorkMart! NORTH leads to Relic Castle.");
                 break;
             case "Relic Castle":
                 System.out.println("Deserted ancient ruins buried under sand. SOUTH leads back to Accumula Town.");
@@ -446,90 +685,159 @@ public class Zorkmon {
         }
     }
 
-    private static void triggerWildEncounter(String room, ZorkmonPet player, Scanner scanner, Random random) {
+    // =========================================================================
+    // COMBAT & ENCOUNTER ENGINE
+    // =========================================================================
+
+    /**
+     * Randomly triggers wild encounters while moving in grass locations (1-in-6 chance).
+     */
+    private static void triggerWildEncounter(String room, List<ZorkmonPet> party, int activeIndex, Scanner scanner, Random random, int[] zorkBalls, int[] money) {
         if ((room.equals("Route 1") || room.equals("Pinwheel Forest")) && random.nextInt(6) == 0) {
             ZorkmonPet wild;
             if (room.equals("Route 1")) {
                 ZorkmonPet[] pool = {
-                    new ZorkmonPet("Patrat", "Normal", null, 3, 45, 12, 10, 51, Move.TACKLE),
-                    new ZorkmonPet("Lillipup", "Normal", null, 4, 50, 14, 11, 55, Move.BITE),
-                    new ZorkmonPet("Pidove", "Normal", "Flying", 3, 48, 13, 10, 53, Move.GUST)
+                    new ZorkmonPet("Patrat", "Normal", null, 3, 45, 12, 10, 51, 255, Move.TACKLE),
+                    new ZorkmonPet("Lillipup", "Normal", null, 4, 50, 14, 11, 55, 255, Move.BITE),
+                    new ZorkmonPet("Pidove", "Normal", "Flying", 3, 48, 13, 10, 53, 255, Move.GUST)
                 };
                 wild = pool[random.nextInt(pool.length)];
             } else {
                 ZorkmonPet[] pool = {
-                    new ZorkmonPet("Sewaddle", "Bug", "Grass", 4, 55, 15, 13, 62, Move.get("Bug Bite")),
-                    new ZorkmonPet("Venipede", "Bug", "Poison", 4, 60, 16, 12, 52, Move.get("Poison Tail")),
-                    new ZorkmonPet("Joltik", "Bug", "Electric", 5, 40, 18, 9, 64, Move.get("Electroweb"))
+                    new ZorkmonPet("Sewaddle", "Bug", "Grass", 4, 55, 15, 13, 62, 255, Move.get("Bug Bite")),
+                    new ZorkmonPet("Venipede", "Bug", "Poison", 4, 60, 16, 12, 52, 255, Move.get("Poison Tail")),
+                    new ZorkmonPet("Joltik", "Bug", "Electric", 5, 40, 18, 9, 64, 190, Move.get("Electroweb"))
                 };
                 wild = pool[random.nextInt(pool.length)];
             }
 
             System.out.println("\n[!] A wild " + wild.name + " (" + wild.getTypeDisplay() + " Type) appeared!");
-            startBattle(player, wild, scanner, random, null, null, null);
+            startBattle(party, activeIndex, wild, scanner, random, null, null, null, zorkBalls, money, false);
         }
     }
 
-    private static boolean startBattle(ZorkmonPet player, ZorkmonPet opponent, Scanner scanner, Random random, String rivalName, String playerGender, String playerName) {
+    /**
+     * Main combat turn loop for handling attacks, capturing, switching, and running.
+     *
+     * @return true if the player wins or catches the opponent; false if player flees or faints
+     */
+    private static boolean startBattle(List<ZorkmonPet> party, int initialActiveIndex, ZorkmonPet opponent, Scanner scanner, Random random, String rivalName, String playerGender, String playerName, int[] zorkBalls, int[] money, boolean isTrainerBattle) {
         System.out.println("================ BATTLE START ================");
-        if (rivalName != null) {
+        if (isTrainerBattle) {
             printRivalBattleStartDialogue(rivalName, playerGender, playerName, opponent.name);
         } else {
             System.out.println("Battle against wild " + opponent.name + " (" + opponent.getTypeDisplay() + " Type)!");
         }
 
-        while (!player.isFainted() && !opponent.isFainted()) {
+        int activeIdx = initialActiveIndex;
+
+        while (!allFainted(party) && !opponent.isFainted()) {
+            ZorkmonPet player = party.get(activeIdx);
+
+            // Auto-switch prompt if active Zorkmon has fainted
+            if (player.isFainted()) {
+                System.out.println("\n" + player.name + " is fainted! You must send out another Zorkmon!");
+                activeIdx = forceBattleSwitch(party, activeIdx, scanner);
+                player = party.get(activeIdx);
+            }
+
             System.out.println("\n" + player.name + " HP: " + player.hp + "/" + player.maxHp + " | " + opponent.name + " HP: " + opponent.hp + "/" + opponent.maxHp);
-            System.out.println("Choose move: [1] Tackle  [2] " + player.specialMove.getName() + " (" + player.specialMove.getType() + ")  [3] Run");
+            System.out.println("Choose action: [1] Tackle  [2] " + player.specialMove.getName() + " (" + player.specialMove.getType() + ")  [3] Catch  [4] Switch  [5] Run");
             System.out.print("Battle > ");
 
             String choice = scanner.nextLine().trim();
 
-            if (choice.equals("3") || choice.equalsIgnoreCase("run")) {
+            if (choice.equals("5") || choice.equalsIgnoreCase("run")) {
+                if (isTrainerBattle) {
+                    System.out.println("You can't run from a Trainer battle!");
+                    continue;
+                }
                 System.out.println("You fled back to safety!");
                 return false;
             }
 
-            // Player Turn
-            int playerDamage = 0;
-            if (choice.equals("1") || choice.equalsIgnoreCase("tackle")) {
-                playerDamage = calculateFormulaDamage(player, opponent, Move.TACKLE, random);
-                System.out.println("\n" + player.name + " used Tackle!");
-            } else if (choice.equals("2") || choice.equalsIgnoreCase(player.specialMove.getName())) {
-                playerDamage = calculateFormulaDamage(player, opponent, player.specialMove, random);
-                
-                double typeMod = getFullTypeMultiplier(player.specialMove.getType(), opponent.primaryType, opponent.secondaryType);
-                System.out.print("\n" + player.name + " used " + player.specialMove.getName() + "! ");
-                if (typeMod > 1.0) {
-                    System.out.println("It's super effective!");
-                } else if (typeMod == 0.0) {
-                    System.out.println("It had no effect!");
-                } else if (typeMod < 1.0) {
-                    System.out.println("It's not very effective...");
+            // --- Catch Action ---
+            if (choice.equals("3") || choice.equalsIgnoreCase("catch")) {
+                if (isTrainerBattle) {
+                    System.out.println("\n" + rivalName + ": \"Hey! Don't try to steal another Trainer's Zorkmon!\"");
+                    System.out.println(">>> You cannot catch a Zorkmon that belongs to another Trainer! <<<");
+                } else if (zorkBalls[0] <= 0) {
+                    System.out.println("\nYou don't have any Zork Balls left!");
                 } else {
-                    System.out.println();
+                    zorkBalls[0]--;
+                    System.out.println("\nYou threw a Zork Ball! (Remaining Zork Balls: " + zorkBalls[0] + ")");
+                    boolean caught = attemptCatch(opponent, 1.0, 1.0, random);
+                    if (caught) {
+                        System.out.println("Gotcha! " + opponent.name + " was caught!");
+                        party.add(opponent);
+
+                        // Award EXP and prize money upon successful capture
+                        int expGained = (opponent.baseExpYield * opponent.level) / 7;
+                        int prizeMoney = opponent.level * 40;
+                        money[0] += prizeMoney;
+                        System.out.println("\n" + player.name + " earned EXP for catching " + opponent.name + "!");
+                        System.out.println("You collected $" + prizeMoney + " after the battle!");
+                        player.gainExp(expGained);
+                        return true;
+                    } else {
+                        System.out.println("Oh no! The Zorkmon broke free!");
+                    }
+                }
+            } else if (choice.equals("4") || choice.equalsIgnoreCase("switch")) {
+                // --- In-Battle Switch Option ---
+                int newIdx = handleInBattleSwitch(party, activeIdx, scanner);
+                if (newIdx != activeIdx) {
+                    activeIdx = newIdx;
+                    player = party.get(activeIdx);
+                    System.out.println("Go! " + player.name + "!");
+                } else {
+                    continue; // Cancelled switch, repeat choice
                 }
             } else {
-                System.out.println("Invalid choice! You stumbled and lost your turn!");
+                // --- Player Attack Turn ---
+                int playerDamage = 0;
+                if (choice.equals("1") || choice.equalsIgnoreCase("tackle")) {
+                    playerDamage = calculateFormulaDamage(player, opponent, Move.TACKLE, random);
+                    System.out.println("\n" + player.name + " used Tackle!");
+                } else if (choice.equals("2") || choice.equalsIgnoreCase(player.specialMove.getName())) {
+                    playerDamage = calculateFormulaDamage(player, opponent, player.specialMove, random);
+
+                    double typeMod = getFullTypeMultiplier(player.specialMove.getType(), opponent.primaryType, opponent.secondaryType);
+                    System.out.print("\n" + player.name + " used " + player.specialMove.getName() + "! ");
+                    if (typeMod > 1.0) {
+                        System.out.println("It's super effective!");
+                    } else if (typeMod == 0.0) {
+                        System.out.println("It had no effect!");
+                    } else if (typeMod < 1.0) {
+                        System.out.println("It's not very effective...");
+                    } else {
+                        System.out.println();
+                    }
+                } else {
+                    System.out.println("Invalid choice! You stumbled and lost your turn!");
+                }
+
+                if (playerDamage > 0) {
+                    opponent.hp = Math.max(0, opponent.hp - playerDamage);
+                    System.out.println(opponent.name + " took " + playerDamage + " damage!");
+                }
+
+                if (opponent.isFainted()) {
+                    System.out.println("\n" + opponent.name + " fainted! You won the battle!");
+
+                    int expGained = (opponent.baseExpYield * opponent.level) / 7;
+                    int prizeMoney = opponent.level * (isTrainerBattle ? 200 : 50);
+                    money[0] += prizeMoney;
+                    System.out.println("You won $" + prizeMoney + " in prize money!");
+                    player.gainExp(expGained);
+                    return true;
+                }
             }
 
-            if (playerDamage > 0) {
-                opponent.hp = Math.max(0, opponent.hp - playerDamage);
-                System.out.println(opponent.name + " took " + playerDamage + " damage!");
-            }
-
-            if (opponent.isFainted()) {
-                System.out.println("\n" + opponent.name + " fainted! You won the battle!");
-                
-                int expGained = (opponent.baseExpYield * opponent.level) / 7;
-                player.gainExp(expGained);
-                return true;
-            }
-
-            // Opponent Turn
+            // --- Opponent Counterattack Turn ---
             System.out.println("\n" + opponent.name + " attacks!");
             int oppDamage = calculateFormulaDamage(opponent, player, opponent.specialMove, random);
-            
+
             double oppTypeMod = getFullTypeMultiplier(opponent.specialMove.getType(), player.primaryType, player.secondaryType);
             System.out.print(opponent.name + " used " + opponent.specialMove.getName() + "! ");
             if (oppTypeMod > 1.0) {
@@ -548,6 +856,110 @@ public class Zorkmon {
 
         return false;
     }
+
+    /**
+     * Prompts player to voluntarily switch active Zorkmon during battle.
+     */
+    private static int handleInBattleSwitch(List<ZorkmonPet> party, int currentIdx, Scanner scanner) {
+        if (party.size() <= 1) {
+            System.out.println("You have no other Zorkmon in your party to switch to!");
+            return currentIdx;
+        }
+
+        System.out.println("\n--- SWITCH ZORKMON ---");
+        for (int i = 0; i < party.size(); i++) {
+            ZorkmonPet pet = party.get(i);
+            String statusStr = (i == currentIdx) ? " [IN BATTLE]" : "";
+            if (pet.isFainted()) statusStr += " (FAINTED)";
+            System.out.println("[" + (i + 1) + "] " + pet.name + " (Lvl " + pet.level + " " + pet.getTypeDisplay() + " | HP: " + pet.hp + "/" + pet.maxHp + ")" + statusStr);
+        }
+        System.out.print("Choose Zorkmon to send out (or 0 to cancel) > ");
+        try {
+            int sel = Integer.parseInt(scanner.nextLine().trim());
+            if (sel > 0 && sel <= party.size()) {
+                int targetIdx = sel - 1;
+                if (targetIdx == currentIdx) {
+                    System.out.println(party.get(targetIdx).name + " is already in battle!");
+                } else if (party.get(targetIdx).isFainted()) {
+                    System.out.println(party.get(targetIdx).name + " is fainted and cannot battle!");
+                } else {
+                    return targetIdx;
+                }
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid selection!");
+        }
+        return currentIdx;
+    }
+
+    /**
+     * Forces the player to choose a non-fainted Zorkmon when the active one faints in battle.
+     */
+    private static int forceBattleSwitch(List<ZorkmonPet> party, int currentIdx, Scanner scanner) {
+        System.out.println("\n--- CHOOSE NEXT ZORKMON ---");
+        for (int i = 0; i < party.size(); i++) {
+            ZorkmonPet pet = party.get(i);
+            if (!pet.isFainted()) {
+                System.out.println("[" + (i + 1) + "] " + pet.name + " (Lvl " + pet.level + " " + pet.getTypeDisplay() + " | HP: " + pet.hp + "/" + pet.maxHp + ")");
+            }
+        }
+        while (true) {
+            System.out.print("Select next Zorkmon > ");
+            try {
+                int sel = Integer.parseInt(scanner.nextLine().trim());
+                if (sel > 0 && sel <= party.size() && !party.get(sel - 1).isFainted()) {
+                    return sel - 1;
+                }
+            } catch (NumberFormatException ignored) {}
+            System.out.println("Invalid choice! Choose an active Zorkmon.");
+        }
+    }
+
+    // =========================================================================
+    // CATCHING MECHANICS & FORMULAS
+    // =========================================================================
+
+    /**
+     * Calculates capture success using the Gen III/IV formula:
+     * $$a = \frac{(3 \times MaxHP - 2 \times CurrentHP) \times CatchRate \times BallBonus}{3 \times MaxHP} \times StatusBonus$$
+     * Followed by computing $b = 65536 \times (a / 255)^{0.25}$ for up to 4 shake checks.
+     *
+     * @param target      wild Zorkmon being caught
+     * @param ballBonus   multiplier for ball type (e.g., 1.0 for standard Zork Ball)
+     * @param statusBonus multiplier for status condition (e.g., 1.0 for none)
+     * @param random      random number generator instance
+     * @return true if target was successfully captured
+     */
+    private static boolean attemptCatch(ZorkmonPet target, double ballBonus, double statusBonus, Random random) {
+        // Calculate modified catch value 'a'
+        double a = (((3.0 * target.maxHp - 2.0 * target.hp) * target.catchRate * ballBonus) / (3.0 * target.maxHp)) * statusBonus;
+
+        if (a >= 255.0) {
+            System.out.println("Shake... Shake... Shake... Click!");
+            return true;
+        }
+
+        // Calculate shake probability check 'b'
+        double b = 65536.0 * Math.pow(a / 255.0, 0.25);
+
+        // Perform up to 4 shake checks
+        for (int shake = 1; shake <= 4; shake++) {
+            int randomRoll = random.nextInt(65536);
+            if (randomRoll >= (int) b) {
+                for (int s = 1; s < shake; s++) {
+                    System.out.println("Shake...");
+                }
+                return false;
+            }
+        }
+
+        System.out.println("Shake... Shake... Shake... Click!");
+        return true;
+    }
+
+    // =========================================================================
+    // RIVAL DIALOGUE HELPER METHODS
+    // =========================================================================
 
     private static void printRivalBattleStartDialogue(String rivalName, String playerGender, String playerName, String opponentName) {
         if ("Boy".equalsIgnoreCase(playerGender)) {
@@ -569,6 +981,14 @@ public class Zorkmon {
         }
     }
 
+    // =========================================================================
+    // DAMAGE CALCULATIONS & TYPE CHART
+    // =========================================================================
+
+    /**
+     * Calculates final move damage using the standard damage formula:
+     * $$Damage = \left( \frac{\frac{2 \times Level}{5} + 2 \times Power \times Attack / Defense}{50} + 2 \right) \times Critical \times Random \times STAB \times Type$$
+     */
     private static int calculateFormulaDamage(ZorkmonPet attacker, ZorkmonPet defender, Move move, Random random) {
         int baseLevelCalc = (2 * attacker.level) / 5 + 2;
         int basePowerCalc = (baseLevelCalc * move.getPower() * attacker.attack) / defender.defense;
@@ -588,6 +1008,9 @@ public class Zorkmon {
         return Math.max(1, (int) finalDamage);
     }
 
+    /**
+     * Computes cumulative type multiplier against dual-type defenders.
+     */
     private static double getFullTypeMultiplier(String moveType, String defType1, String defType2) {
         double mult = getSingleTypeMultiplier(moveType, defType1);
         if (defType2 != null) {
@@ -596,6 +1019,9 @@ public class Zorkmon {
         return mult;
     }
 
+    /**
+     * Computes single-type chart effectiveness multiplier (0.0x, 0.5x, 1.0x, 2.0x).
+     */
     private static double getSingleTypeMultiplier(String attacker, String defender) {
         if (attacker == null || defender == null) return 1.0;
         attacker = attacker.trim();
