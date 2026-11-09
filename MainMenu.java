@@ -9,28 +9,27 @@ public static void main(String[] args){
     //Create Window
     JFrame frame = new JFrame("Main Menu");
     frame.setSize(800,800);
-    
-    GridBagConstraints gbc = new GridBagConstraints();
-    gbc.insets= new Insets(10, 10, 10, 10);
-    //Create JPanel
+
     JPanel panel = new JPanel(new GridBagLayout());
-    JPanel group = new JPanel(new GridBagLayout());
-    JLabel label = new JLabel("Project Zorkmon");
-    gbc.gridx = 1;
-    gbc.gridy = 1;
-    gbc.weightx = 0.5;
-    gbc.weighty = 0.0;
-    gbc.anchor = GridBagConstraints.CENTER;
-    group.add(label, gbc);
+    GridBagConstraints gbc = new GridBagConstraints();
+
+    gbc.gridx = 0; 
+    gbc.gridy = 0; // One cell that fills the whole panel, hence the 0s. 
+
+    gbc.weightx = 1.0; // Fill the whole width of the panel
+    gbc.weighty = 1.0; // Fill the whole height of the panel
 
     JButton play = new JButton("Play");
-    gbc.gridx = 1;
-    gbc.gridy = 2;
-    gbc.anchor = GridBagConstraints.CENTER;
-    gbc.weightx = 0.5;
-    gbc.weighty = 0.0;
-    group.add(play,gbc);
-    panel.add(group, gbc);
+    gbc.anchor = GridBagConstraints.CENTER; // Center the button in the cell
+    gbc.insets = new Insets(0, 0, 0, 0); // No padding around the button
+    // top, left, bottom, right
+    panel.add(play, gbc);
+
+    // Now to add the title button and center it horizontally, but offset it vertically. 
+    JLabel label = new JLabel("Project Zorkmon");
+    gbc.anchor = GridBagConstraints.CENTER; // Anchor the title to the center of the cell
+    gbc.insets = new Insets(0, 0, 120, 0); // Add some padding around the title
+    panel.add(label, gbc); // Now that we have modified values for gbc, it will position the label object differently.
 
     JButton exit = new JButton("X");
     gbc.gridx = 2;
@@ -40,16 +39,8 @@ public static void main(String[] args){
     gbc.anchor = GridBagConstraints.NORTHEAST;
     panel.add(exit, gbc);
 
-    
-
-    
     frame.add(panel);
     frame.setVisible(true);
-
-
     
-    
-
-
-}
+    }
 }
