@@ -29,6 +29,7 @@ import zorkmon.ZorkdexData.ZorkdexEntry;
  *   <li>Zorkdex viewer with search and filtering capabilities</li>
  *   <li>Relic Castle riddle prompt for Rare Candies</li>
  *   <li>Unified Bag/Items Menu ([14] Items) supporting both Potions and Rare Candies</li>
+ *   <li>Forced Wild Encounter / Hunt action ([15] Hunt) in wild grass areas</li>
  * </ul>
  * 
  * @author lucia
@@ -518,7 +519,8 @@ public class Zorkmon {
             System.out.println("[ Location: " + currentRoom + " ]");
             System.out.println("Actions: [1] Look  [2] Map  [3] Go North  [4] Go South  [5] Go East");
             System.out.println("         [6] Go West  [7] Search  [8] Check Party/Status  [9] Switch");
-            System.out.println("         [10] Center  [11] Mart  [12] Challenge  [13] Main Menu  [14] Items");
+            System.out.println("         [10] Center  [11] Mart  [12] Challenge  [13] Main Menu");
+            System.out.println("         [14] Items  [15] Hunt (Wild Encounter)");
             System.out.print("> ");
             String input = scanner.nextLine().trim().toLowerCase();
 
@@ -696,6 +698,23 @@ public class Zorkmon {
                     handleItemsMenu(party, potions, rareCandies, scanner);
                     break;
 
+                case "15":
+                case "hunt":
+                case "encounter":
+                case "wild":
+                    if (currentRoom.equals("Route 1") || currentRoom.equals("Pinwheel Forest")) {
+                        System.out.println("You rustle through the tall grass looking for wild Zorkmon...");
+                        triggerWildEncounter(currentRoom, party, storageBox, activeIndex, scanner, random, zorkBalls, money, true);
+                        if (allFainted(party)) {
+                            handleBlackout(party, zorkBalls, money);
+                            currentRoom = "Nuvema Town";
+                            activeIndex = 0;
+                        }
+                    } else {
+                        System.out.println("There are no wild Zorkmon to hunt in " + currentRoom + ". Head to Route 1 or Pinwheel Forest!");
+                    }
+                    break;
+
                 case "13":
                 case "quit":
                 case "exit":
@@ -704,12 +723,17 @@ public class Zorkmon {
                     break;
 
                 default:
-                    System.out.println("Unknown command! Enter a number (1-14) or standard command.");
+                    System.out.println("Unknown command! Enter a number (1-15) or standard command.");
                     break;
             }
 
-            if (running && !input.equals("13") && !input.equals("quit") && !input.equals("exit") && !input.equals("12") && !input.equals("challenge") && !input.equals("14") && !input.equals("items") && !input.equals("item") && !input.equals("inventory")) {
-                boolean wonOrFled = triggerWildEncounter(currentRoom, party, storageBox, activeIndex, scanner, random, zorkBalls, money);
+            boolean skipRandomEncounter = input.equals("13") || input.equals("quit") || input.equals("exit")
+                    || input.equals("12") || input.equals("challenge")
+                    || input.equals("14") || input.equals("items") || input.equals("item") || input.equals("inventory")
+                    || input.equals("15") || input.equals("hunt") || input.equals("encounter") || input.equals("wild");
+
+            if (running && !skipRandomEncounter) {
+                boolean wonOrFled = triggerWildEncounter(currentRoom, party, storageBox, activeIndex, scanner, random, zorkBalls, money, false);
                 if (allFainted(party)) {
                     handleBlackout(party, zorkBalls, money);
                     currentRoom = "Nuvema Town";
@@ -1116,10 +1140,10 @@ public class Zorkmon {
     // =========================================================================
 
     /**
-     * Randomly triggers wild encounters while moving in grass locations (1-in-6 chance).
+     * Triggers wild encounters while moving in grass locations (1-in-6 chance), or immediately if forced.
      */
-    private static boolean triggerWildEncounter(String room, List<ZorkmonPet> party, List<ZorkmonPet> storageBox, int activeIndex, Scanner scanner, Random random, int[] zorkBalls, int[] money) {
-        if ((room.equals("Route 1") || room.equals("Pinwheel Forest")) && random.nextInt(6) == 0) {
+    private static boolean triggerWildEncounter(String room, List<ZorkmonPet> party, List<ZorkmonPet> storageBox, int activeIndex, Scanner scanner, Random random, int[] zorkBalls, int[] money, boolean forceEncounter) {
+        if ((room.equals("Route 1") || room.equals("Pinwheel Forest")) && (forceEncounter || random.nextInt(6) == 0)) {
             ZorkmonPet wild;
             if (room.equals("Route 1")) {
                 ZorkmonPet[] pool = {
