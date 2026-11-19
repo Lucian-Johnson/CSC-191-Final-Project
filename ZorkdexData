@@ -1,8 +1,3 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-
 package zorkmon;
 
 import java.util.ArrayList;
@@ -14,9 +9,10 @@ import java.util.Map;
  * ZorkdexData serves as the static data repository for the Zorkmon game.
  * It contains:
  * <ul>
- *   <li>The {@link Move} inner class managing move definitions, types, categories, powers, and accuracies.</li>
- *   <li>The complete Generations 1 through 5 move database (555 moves).</li>
+ *   <li>The {@link Move} inner class managing move definitions, types, categories, powers, accuracies, and secondary effects.</li>
+ *   <li>The complete Generations 1 through 5 move database.</li>
  *   <li>The {@link ZorkdexEntry} inner class representing Unova Pokédex entries (#000 to #155).</li>
+ *   <li>The {@link Evolution} inner class defining level-based species evolutions.</li>
  * </ul>
  * 
  * @author lucia
@@ -29,7 +25,7 @@ public class ZorkdexData {
 
     /**
      * Represents a combat move usable by a Zorkmon in battle.
-     * Includes static registry lookup and predefined move shortcuts.
+     * Includes static registry lookup, secondary effect metadata, and predefined move shortcuts.
      */
     public static class Move {
         /** Global registry mapping normalized move names to Move instances. */
@@ -40,22 +36,35 @@ public class ZorkdexData {
         private final String category; // "Physical", "Special", or "Status"
         private final int power;
         private final int accuracy;
+        private final String effect;     // e.g., "BURN", "FLINCH", "PARALYZE", "POISON", "FREEZE", "SLEEP", "CONFUSE", "TRI_ATTACK", or null
+        private final int effectChance;  // 0 to 100 percentage
 
         /**
-         * Constructs a Move instance.
-         *
-         * @param name     the displayed name of the move
-         * @param type     the elemental type (e.g., "Fire", "Grass", "Water")
-         * @param category the move category ("Physical", "Special", or "Status")
-         * @param power    base power of the move (0 for status moves)
-         * @param accuracy accuracy percentage (1–100)
+         * Constructs a Move instance without a secondary effect.
          */
         public Move(String name, String type, String category, int power, int accuracy) {
+            this(name, type, category, power, accuracy, null, 0);
+        }
+
+        /**
+         * Constructs a Move instance with an optional secondary effect.
+         *
+         * @param name         the displayed name of the move
+         * @param type         the elemental type (e.g., "Fire", "Grass", "Water")
+         * @param category     the move category ("Physical", "Special", or "Status")
+         * @param power        base power of the move (0 for status moves)
+         * @param accuracy     accuracy percentage (1–100, or 0 for self-target/always-hit)
+         * @param effect       secondary status/volatile effect identifier (or null)
+         * @param effectChance percentage chance (0–100) to trigger the secondary effect
+         */
+        public Move(String name, String type, String category, int power, int accuracy, String effect, int effectChance) {
             this.name = name;
             this.type = type;
             this.category = category;
             this.power = power;
             this.accuracy = accuracy;
+            this.effect = effect;
+            this.effectChance = effectChance;
         }
 
         // --- Getters ---
@@ -64,12 +73,24 @@ public class ZorkdexData {
         public String getCategory() { return category; }
         public int getPower() { return power; }
         public int getAccuracy() { return accuracy; }
+        public String getEffect() { return effect; }
+        public int getEffectChance() { return effectChance; }
+
+        /**
+         * Registers a move into the static global registry without a secondary effect.
+         */
+        public static void register(String name, String type, String category, int power, int accuracy) {
+            register(name, type, category, power, accuracy, null, 0);
+        }
 
         /**
          * Registers a move into the static global registry using a normalized name key.
          */
-        public static void register(String name, String type, String category, int power, int accuracy) {
-            REGISTRY.put(name.toLowerCase().replaceAll("[^a-z0-9]", ""), new Move(name, type, category, power, accuracy));
+        public static void register(String name, String type, String category, int power, int accuracy, String effect, int effectChance) {
+            REGISTRY.put(
+                name.toLowerCase().replaceAll("[^a-z0-9]", ""),
+                new Move(name, type, category, power, accuracy, effect, effectChance)
+            );
         }
 
         /**
@@ -87,12 +108,12 @@ public class ZorkdexData {
         // --- Standard Move Shortcuts for Quick Reference ---
         public static final Move TACKLE = new Move("Tackle", "Normal", "Physical", 50, 100);
         public static final Move VINE_WHIP = new Move("Vine Whip", "Grass", "Physical", 45, 100);
-        public static final Move EMBER = new Move("Ember", "Fire", "Special", 40, 100);
+        public static final Move EMBER = new Move("Ember", "Fire", "Special", 40, 100, "BURN", 10);
         public static final Move WATER_GUN = new Move("Water Gun", "Water", "Special", 40, 100);
-        public static final Move BITE = new Move("Bite", "Dark", "Physical", 60, 100);
+        public static final Move BITE = new Move("Bite", "Dark", "Physical", 60, 100, "FLINCH", 30);
         public static final Move GUST = new Move("Gust", "Flying", "Special", 40, 100);
         public static final Move BUG_BITE = new Move("Bug Bite", "Bug", "Physical", 60, 100);
-        public static final Move POISON_TAIL = new Move("Poison Tail", "Poison", "Physical", 50, 100);
+        public static final Move POISON_TAIL = new Move("Poison Tail", "Poison", "Physical", 50, 100, "POISON", 10);
         public static final Move ELECTROWEB = new Move("Electroweb", "Electric", "Special", 55, 95);
 
         static {
@@ -100,40 +121,41 @@ public class ZorkdexData {
         }
 
         /**
-         * Populates the static registry with moves across Gens 1-5.
+         * Populates the static registry with moves across Gens 1-5, including secondary effects.
+         * Columns: {Name, Type, Category, Power, Accuracy, [Optional Effect], [Optional EffectChance]}
          */
         private static void initGen1to5MovePool() {
             String[][] moves = {
                 {"Pound", "Normal", "Physical", "40", "100"}, {"Karate Chop", "Fighting", "Physical", "52", "100"},
                 {"Double Slap", "Normal", "Physical", "15", "85"}, {"Comet Punch", "Normal", "Physical", "18", "85"},
                 {"Mega Punch", "Normal", "Physical", "80", "85"}, {"Pay Day", "Normal", "Physical", "40", "100"},
-                {"Fire Punch", "Fire", "Physical", "75", "100"}, {"Ice Punch", "Ice", "Physical", "75", "100"},
-                {"Thunder Punch", "Electric", "Physical", "75", "100"}, {"Scratch", "Normal", "Physical", "40", "100"},
+                {"Fire Punch", "Fire", "Physical", "75", "100", "BURN", "10"}, {"Ice Punch", "Ice", "Physical", "75", "100", "FREEZE", "10"},
+                {"Thunder Punch", "Electric", "Physical", "75", "100", "PARALYZE", "10"}, {"Scratch", "Normal", "Physical", "40", "100"},
                 {"Vise Grip", "Normal", "Physical", "55", "100"}, {"Guillotine", "Normal", "Physical", "0", "30"},
                 {"Razor Wind", "Normal", "Special", "80", "100"}, {"Swords Dance", "Normal", "Status", "0", "0"},
                 {"Cut", "Normal", "Physical", "50", "95"}, {"Gust", "Flying", "Special", "40", "100"},
                 {"Wing Attack", "Flying", "Physical", "60", "100"}, {"Whirlwind", "Normal", "Status", "0", "0"},
                 {"Fly", "Flying", "Physical", "90", "95"}, {"Bind", "Normal", "Physical", "15", "85"},
                 {"Slam", "Normal", "Physical", "80", "75"}, {"Vine Whip", "Grass", "Physical", "45", "100"},
-                {"Stomp", "Normal", "Physical", "65", "100"}, {"Double Kick", "Fighting", "Physical", "30", "100"},
+                {"Stomp", "Normal", "Physical", "65", "100", "FLINCH", "30"}, {"Double Kick", "Fighting", "Physical", "30", "100"},
                 {"Mega Kick", "Normal", "Physical", "120", "75"}, {"Jump Kick", "Fighting", "Physical", "100", "95"},
-                {"Rolling Kick", "Fighting", "Physical", "60", "85"}, {"Sand Attack", "Ground", "Status", "0", "100"},
-                {"Headbutt", "Normal", "Physical", "70", "100"}, {"Horn Attack", "Normal", "Physical", "65", "100"},
+                {"Rolling Kick", "Fighting", "Physical", "60", "85", "FLINCH", "30"}, {"Sand Attack", "Ground", "Status", "0", "100"},
+                {"Headbutt", "Normal", "Physical", "70", "100", "FLINCH", "30"}, {"Horn Attack", "Normal", "Physical", "65", "100"},
                 {"Fury Attack", "Normal", "Physical", "15", "85"}, {"Horn Drill", "Normal", "Physical", "0", "30"},
-                {"Tackle", "Normal", "Physical", "50", "100"}, {"Body Slam", "Normal", "Physical", "85", "100"},
+                {"Tackle", "Normal", "Physical", "50", "100"}, {"Body Slam", "Normal", "Physical", "85", "100", "PARALYZE", "30"},
                 {"Wrap", "Normal", "Physical", "15", "90"}, {"Take Down", "Normal", "Physical", "90", "85"},
                 {"Thrash", "Normal", "Physical", "120", "100"}, {"Double-Edge", "Normal", "Physical", "120", "100"},
-                {"Tail Whip", "Normal", "Status", "0", "100"}, {"Poison Sting", "Poison", "Physical", "15", "100"},
-                {"Twineedle", "Bug", "Physical", "25", "100"}, {"Pin Missile", "Bug", "Physical", "25", "95"},
-                {"Leer", "Normal", "Status", "0", "100"}, {"Bite", "Dark", "Physical", "60", "100"},
+                {"Tail Whip", "Normal", "Status", "0", "100"}, {"Poison Sting", "Poison", "Physical", "15", "100", "POISON", "30"},
+                {"Twineedle", "Bug", "Physical", "25", "100", "POISON", "20"}, {"Pin Missile", "Bug", "Physical", "25", "95"},
+                {"Leer", "Normal", "Status", "0", "100"}, {"Bite", "Dark", "Physical", "60", "100", "FLINCH", "30"},
                 {"Growl", "Normal", "Status", "0", "100"}, {"Roar", "Normal", "Status", "0", "0"},
-                {"Sing", "Normal", "Status", "0", "55"}, {"Supersonic", "Normal", "Status", "0", "55"},
+                {"Sing", "Normal", "Status", "0", "55", "SLEEP", "100"}, {"Supersonic", "Normal", "Status", "0", "55", "CONFUSE", "100"},
                 {"Sonic Boom", "Normal", "Special", "20", "90"}, {"Disable", "Normal", "Status", "0", "100"},
-                {"Acid", "Poison", "Special", "40", "100"}, {"Ember", "Fire", "Special", "40", "100"},
-                {"Flamethrower", "Fire", "Special", "90", "100"}, {"Mist", "Ice", "Status", "0", "0"},
+                {"Acid", "Poison", "Special", "40", "100"}, {"Ember", "Fire", "Special", "40", "100", "BURN", "10"},
+                {"Flamethrower", "Fire", "Special", "90", "100", "BURN", "10"}, {"Mist", "Ice", "Status", "0", "0"},
                 {"Water Gun", "Water", "Special", "40", "100"}, {"Hydro Pump", "Water", "Special", "110", "80"},
-                {"Surf", "Water", "Special", "90", "100"}, {"Ice Beam", "Ice", "Special", "90", "100"},
-                {"Blizzard", "Ice", "Special", "110", "70"}, {"Psybeam", "Psychic", "Special", "65", "100"},
+                {"Surf", "Water", "Special", "90", "100"}, {"Ice Beam", "Ice", "Special", "90", "100", "FREEZE", "10"},
+                {"Blizzard", "Ice", "Special", "110", "70", "FREEZE", "10"}, {"Psybeam", "Psychic", "Special", "65", "100", "CONFUSE", "10"},
                 {"Bubble Beam", "Water", "Special", "65", "100"}, {"Aurora Beam", "Ice", "Special", "65", "100"},
                 {"Hyper Beam", "Normal", "Special", "150", "90"}, {"Peck", "Flying", "Physical", "35", "100"},
                 {"Drill Peck", "Flying", "Physical", "80", "100"}, {"Submission", "Fighting", "Physical", "80", "80"},
@@ -142,72 +164,150 @@ public class ZorkdexData {
                 {"Absorb", "Grass", "Special", "20", "100"}, {"Mega Drain", "Grass", "Special", "40", "100"},
                 {"Leech Seed", "Grass", "Status", "0", "90"}, {"Growth", "Normal", "Status", "0", "0"},
                 {"Razor Leaf", "Grass", "Physical", "55", "95"}, {"Solar Beam", "Grass", "Special", "120", "100"},
-                {"Poison Powder", "Poison", "Status", "0", "75"}, {"Stun Spore", "Grass", "Status", "0", "75"},
-                {"Sleep Powder", "Grass", "Status", "0", "75"}, {"Petal Dance", "Grass", "Special", "120", "100"},
+                {"Poison Powder", "Poison", "Status", "0", "75", "POISON", "100"}, {"Stun Spore", "Grass", "Status", "0", "75", "PARALYZE", "100"},
+                {"Sleep Powder", "Grass", "Status", "0", "75", "SLEEP", "100"}, {"Petal Dance", "Grass", "Special", "120", "100"},
                 {"String Shot", "Bug", "Status", "0", "95"}, {"Dragon Rage", "Dragon", "Special", "40", "100"},
-                {"Fire Spin", "Fire", "Special", "35", "85"}, {"Thunder Shock", "Electric", "Special", "40", "100"},
-                {"Thunderbolt", "Electric", "Special", "90", "100"}, {"Thunder Wave", "Electric", "Status", "0", "90"},
-                {"Thunder", "Electric", "Special", "110", "70"}, {"Rock Throw", "Rock", "Physical", "50", "90"},
+                {"Fire Spin", "Fire", "Special", "35", "85"}, {"Thunder Shock", "Electric", "Special", "40", "100", "PARALYZE", "10"},
+                {"Thunderbolt", "Electric", "Special", "90", "100", "PARALYZE", "10"}, {"Thunder Wave", "Electric", "Status", "0", "90", "PARALYZE", "100"},
+                {"Thunder", "Electric", "Special", "110", "70", "PARALYZE", "30"}, {"Rock Throw", "Rock", "Physical", "50", "90"},
                 {"Earthquake", "Ground", "Physical", "100", "100"}, {"Fissure", "Ground", "Physical", "0", "30"},
-                {"Dig", "Ground", "Physical", "80", "100"}, {"Toxic", "Poison", "Status", "0", "90"},
-                {"Confusion", "Psychic", "Special", "50", "100"}, {"Psychic", "Psychic", "Special", "90", "100"},
-                {"Hypnosis", "Psychic", "Status", "0", "60"}, {"Meditate", "Psychic", "Status", "0", "0"},
+                {"Dig", "Ground", "Physical", "80", "100"}, {"Toxic", "Poison", "Status", "0", "90", "POISON", "100"},
+                {"Confusion", "Psychic", "Special", "50", "100", "CONFUSE", "10"}, {"Psychic", "Psychic", "Special", "90", "100"},
+                {"Hypnosis", "Psychic", "Status", "0", "60", "SLEEP", "100"}, {"Meditate", "Psychic", "Status", "0", "0"},
                 {"Agility", "Psychic", "Status", "0", "0"}, {"Quick Attack", "Normal", "Physical", "40", "100"},
                 {"Rage", "Normal", "Physical", "20", "100"}, {"Teleport", "Psychic", "Status", "0", "0"},
                 {"Night Shade", "Ghost", "Special", "0", "100"}, {"Mimic", "Normal", "Status", "0", "0"},
                 {"Screech", "Normal", "Status", "0", "85"}, {"Double Team", "Normal", "Status", "0", "0"},
                 {"Recover", "Normal", "Status", "0", "0"}, {"Harden", "Normal", "Status", "0", "0"},
                 {"Minimize", "Normal", "Status", "0", "0"}, {"Smokescreen", "Normal", "Status", "0", "100"},
-                {"Confuse Ray", "Ghost", "Status", "0", "100"}, {"Withdraw", "Water", "Status", "0", "0"},
+                {"Confuse Ray", "Ghost", "Status", "0", "100", "CONFUSE", "100"}, {"Withdraw", "Water", "Status", "0", "0"},
                 {"Defense Curl", "Normal", "Status", "0", "0"}, {"Barrier", "Psychic", "Status", "0", "0"},
                 {"Light Screen", "Psychic", "Status", "0", "0"}, {"Haze", "Ice", "Status", "0", "0"},
                 {"Reflect", "Psychic", "Status", "0", "0"}, {"Focus Energy", "Normal", "Status", "0", "0"},
                 {"Bide", "Normal", "Physical", "0", "0"}, {"Metronome", "Normal", "Status", "0", "0"},
                 {"Mirror Move", "Flying", "Status", "0", "0"}, {"Self-Destruct", "Normal", "Physical", "200", "100"},
-                {"Egg Bomb", "Normal", "Physical", "100", "75"}, {"Lick", "Ghost", "Physical", "30", "100"},
-                {"Smog", "Poison", "Special", "30", "70"}, {"Sludge", "Poison", "Special", "65", "100"},
-                {"Bone Club", "Ground", "Physical", "65", "85"}, {"Fire Blast", "Fire", "Special", "110", "85"},
-                {"Waterfall", "Water", "Physical", "80", "100"}, {"Clamp", "Water", "Physical", "35", "85"},
+                {"Egg Bomb", "Normal", "Physical", "100", "75"}, {"Lick", "Ghost", "Physical", "30", "100", "PARALYZE", "30"},
+                {"Smog", "Poison", "Special", "30", "70", "POISON", "40"}, {"Sludge", "Poison", "Special", "65", "100", "POISON", "30"},
+                {"Bone Club", "Ground", "Physical", "65", "85", "FLINCH", "10"}, {"Fire Blast", "Fire", "Special", "110", "85", "BURN", "10"},
+                {"Waterfall", "Water", "Physical", "80", "100", "FLINCH", "20"}, {"Clamp", "Water", "Physical", "35", "85"},
                 {"Swift", "Normal", "Special", "60", "100"}, {"Skull Bash", "Normal", "Physical", "130", "100"},
                 {"Spike Cannon", "Normal", "Physical", "20", "100"}, {"Constrict", "Normal", "Physical", "10", "100"},
                 {"Amnesia", "Psychic", "Status", "0", "0"}, {"Kinesis", "Psychic", "Status", "0", "80"},
                 {"Soft-Boiled", "Normal", "Status", "0", "0"}, {"High Jump Kick", "Fighting", "Physical", "130", "90"},
-                {"Glare", "Normal", "Status", "0", "100"}, {"Dream Eater", "Psychic", "Special", "100", "100"},
-                {"Poison Gas", "Poison", "Status", "0", "90"}, {"Barrage", "Normal", "Physical", "15", "85"},
-                {"Leech Life", "Bug", "Physical", "80", "100"}, {"Lovely Kiss", "Normal", "Status", "0", "75"},
-                {"Sky Attack", "Flying", "Physical", "140", "90"}, {"Transform", "Normal", "Status", "0", "0"},
-                {"Bubble", "Water", "Special", "40", "100"}, {"Dizzy Punch", "Normal", "Physical", "70", "100"},
-                {"Spore", "Grass", "Status", "0", "100"}, {"Flash", "Normal", "Status", "0", "100"},
+                {"Glare", "Normal", "Status", "0", "100", "PARALYZE", "100"}, {"Dream Eater", "Psychic", "Special", "100", "100"},
+                {"Poison Gas", "Poison", "Status", "0", "90", "POISON", "100"}, {"Barrage", "Normal", "Physical", "15", "85"},
+                {"Leech Life", "Bug", "Physical", "80", "100"}, {"Lovely Kiss", "Normal", "Status", "0", "75", "SLEEP", "100"},
+                {"Sky Attack", "Flying", "Physical", "140", "90", "FLINCH", "30"}, {"Transform", "Normal", "Status", "0", "0"},
+                {"Bubble", "Water", "Special", "40", "100"}, {"Dizzy Punch", "Normal", "Physical", "70", "100", "CONFUSE", "20"},
+                {"Spore", "Grass", "Status", "0", "100", "SLEEP", "100"}, {"Flash", "Normal", "Status", "0", "100"},
                 {"Psywave", "Psychic", "Special", "0", "100"}, {"Splash", "Normal", "Status", "0", "0"},
                 {"Acid Armor", "Poison", "Status", "0", "0"}, {"Crabhammer", "Water", "Physical", "100", "90"},
                 {"Explosion", "Normal", "Physical", "250", "100"}, {"Fury Swipes", "Normal", "Physical", "18", "80"},
                 {"Bonemerang", "Ground", "Physical", "50", "90"}, {"Rest", "Psychic", "Status", "0", "0"},
-                {"Rock Slide", "Rock", "Physical", "75", "90"}, {"Hyper Fang", "Normal", "Physical", "80", "90"},
+                {"Rock Slide", "Rock", "Physical", "75", "90", "FLINCH", "30"}, {"Hyper Fang", "Normal", "Physical", "80", "90", "FLINCH", "10"},
                 {"Sharpen", "Normal", "Status", "0", "0"}, {"Conversion", "Normal", "Status", "0", "0"},
-                {"Tri Attack", "Normal", "Special", "80", "100"}, {"Super Fang", "Normal", "Physical", "0", "90"},
+                {"Tri Attack", "Normal", "Special", "80", "100", "TRI_ATTACK", "20"}, {"Super Fang", "Normal", "Physical", "0", "90"},
                 {"Slash", "Normal", "Physical", "70", "100"}, {"Substitute", "Normal", "Status", "0", "0"},
                 {"Struggle", "Normal", "Physical", "50", "100"},
                 {"Acid Spray", "Poison", "Special", "40", "100"}, {"Acrobatics", "Flying", "Physical", "55", "100"},
-                {"Blue Flare", "Fire", "Special", "130", "85"}, {"Bolt Strike", "Electric", "Physical", "130", "85"},
+                {"Blue Flare", "Fire", "Special", "130", "85", "BURN", "20"}, {"Bolt Strike", "Electric", "Physical", "130", "85", "PARALYZE", "20"},
                 {"Bulldoze", "Ground", "Physical", "60", "100"}, {"Dragon Tail", "Dragon", "Physical", "60", "90"},
                 {"Drill Run", "Ground", "Physical", "80", "95"}, {"Fiery Dance", "Fire", "Special", "80", "100"},
-                {"Foul Play", "Dark", "Physical", "95", "100"}, {"Freeze Shock", "Ice", "Physical", "140", "90"},
+                {"Foul Play", "Dark", "Physical", "95", "100"}, {"Freeze Shock", "Ice", "Physical", "140", "90", "PARALYZE", "30"},
                 {"Fusion Bolt", "Electric", "Physical", "100", "100"}, {"Fusion Flare", "Fire", "Special", "100", "100"},
                 {"Gear Grind", "Steel", "Physical", "50", "85"}, {"Glaciate", "Ice", "Special", "65", "95"},
-                {"Head Charge", "Normal", "Physical", "120", "100"}, {"Hurricane", "Flying", "Special", "110", "70"},
-                {"Ice Burn", "Ice", "Special", "140", "90"}, {"Icicle Crash", "Ice", "Physical", "85", "90"},
+                {"Head Charge", "Normal", "Physical", "120", "100"}, {"Hurricane", "Flying", "Special", "110", "70", "CONFUSE", "30"},
+                {"Ice Burn", "Ice", "Special", "140", "90", "BURN", "30"}, {"Icicle Crash", "Ice", "Physical", "85", "90", "FLINCH", "30"},
                 {"Night Daze", "Dark", "Special", "85", "95"}, {"Psyshock", "Psychic", "Special", "80", "100"},
-                {"Psystrike", "Psychic", "Special", "100", "100"}, {"Relic Song", "Normal", "Special", "75", "100"},
-                {"Sacred Sword", "Fighting", "Physical", "85", "100"}, {"Scald", "Water", "Special", "80", "100"},
-                {"Secret Sword", "Fighting", "Special", "85", "100"}, {"Sludge Wave", "Poison", "Special", "95", "100"},
+                {"Psystrike", "Psychic", "Special", "100", "100"}, {"Relic Song", "Normal", "Special", "75", "100", "SLEEP", "10"},
+                {"Sacred Sword", "Fighting", "Physical", "85", "100"}, {"Scald", "Water", "Special", "80", "100", "BURN", "30"},
+                {"Secret Sword", "Fighting", "Special", "85", "100"}, {"Sludge Wave", "Poison", "Special", "95", "100", "POISON", "10"},
                 {"Techno Blast", "Normal", "Special", "120", "100"}, {"Volt Switch", "Electric", "Special", "70", "100"},
                 {"Wild Charge", "Electric", "Physical", "90", "100"}, {"Electroweb", "Electric", "Special", "55", "95"},
-                {"Bug Bite", "Bug", "Physical", "60", "100"}, {"Poison Tail", "Poison", "Physical", "50", "100"}
+                {"Bug Bite", "Bug", "Physical", "60", "100"}, {"Poison Tail", "Poison", "Physical", "50", "100", "POISON", "10"}
             };
 
             for (String[] entry : moves) {
-                register(entry[0], entry[1], entry[2], Integer.parseInt(entry[3]), Integer.parseInt(entry[4]));
+                String effect = entry.length >= 6 ? entry[5] : null;
+                int chance = entry.length >= 7 ? Integer.parseInt(entry[6]) : 0;
+                register(entry[0], entry[1], entry[2], Integer.parseInt(entry[3]), Integer.parseInt(entry[4]), effect, chance);
             }
+        }
+    }
+
+    // =========================================================================
+    // EVOLUTION REGISTRY
+    // =========================================================================
+
+    /**
+     * Defines level-based evolution rules, resulting types, and stat bonuses for a species.
+     */
+    public static class Evolution {
+        private static final Map<String, Evolution> EVOLUTIONS = new HashMap<>();
+
+        private final String fromSpecies;
+        private final String toSpecies;
+        private final int minLevel;
+        private final String newPrimaryType;
+        private final String newSecondaryType;
+        private final int hpBonus;
+        private final int atkBonus;
+        private final int defBonus;
+
+        public Evolution(String fromSpecies, String toSpecies, int minLevel, String newPrimaryType, String newSecondaryType, int hpBonus, int atkBonus, int defBonus) {
+            this.fromSpecies = fromSpecies;
+            this.toSpecies = toSpecies;
+            this.minLevel = minLevel;
+            this.newPrimaryType = newPrimaryType;
+            this.newSecondaryType = newSecondaryType;
+            this.hpBonus = hpBonus;
+            this.atkBonus = atkBonus;
+            this.defBonus = defBonus;
+        }
+
+        public String getFromSpecies() { return fromSpecies; }
+        public String getToSpecies() { return toSpecies; }
+        public int getMinLevel() { return minLevel; }
+        public String getNewPrimaryType() { return newPrimaryType; }
+        public String getNewSecondaryType() { return newSecondaryType; }
+        public int getHpBonus() { return hpBonus; }
+        public int getAtkBonus() { return atkBonus; }
+        public int getDefBonus() { return defBonus; }
+
+        /**
+         * Retrieves the evolution definition for a species, or null if it does not evolve.
+         */
+        public static Evolution getForSpecies(String species) {
+            if (species == null) return null;
+            return EVOLUTIONS.get(species.toLowerCase());
+        }
+
+        private static void register(String from, String to, int minLevel, String type1, String type2, int hp, int atk, int def) {
+            EVOLUTIONS.put(from.toLowerCase(), new Evolution(from, to, minLevel, type1, type2, hp, atk, def));
+        }
+
+        static {
+            // Starters
+            register("Snivy", "Servine", 17, "Grass", null, 15, 6, 6);
+            register("Servine", "Serperior", 36, "Grass", null, 20, 8, 8);
+            register("Tepig", "Pignite", 17, "Fire", "Fighting", 15, 7, 5);
+            register("Pignite", "Emboar", 36, "Fire", "Fighting", 22, 10, 6);
+            register("Oshawott", "Dewott", 17, "Water", null, 15, 6, 6);
+            register("Dewott", "Samurott", 36, "Water", null, 20, 9, 7);
+
+            // Route 1 Zorkmon
+            register("Patrat", "Watchog", 20, "Normal", null, 15, 7, 6);
+            register("Lillipup", "Herdier", 16, "Normal", null, 12, 6, 5);
+            register("Herdier", "Stoutland", 32, "Normal", null, 18, 9, 8);
+            register("Pidove", "Tranquill", 21, "Normal", "Flying", 12, 6, 5);
+            register("Tranquill", "Unfezant", 32, "Normal", "Flying", 18, 9, 7);
+
+            // Pinwheel Forest Zorkmon
+            register("Sewaddle", "Swadloon", 20, "Bug", "Grass", 12, 5, 7);
+            register("Swadloon", "Leavanny", 30, "Bug", "Grass", 18, 9, 7);
+            register("Venipede", "Whirlipede", 22, "Bug", "Poison", 12, 5, 8);
+            register("Whirlipede", "Scolipede", 30, "Bug", "Poison", 18, 9, 7);
+            register("Joltik", "Galvantula", 36, "Bug", "Electric", 18, 8, 6);
         }
     }
 
