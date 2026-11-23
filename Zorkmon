@@ -24,7 +24,8 @@ import zorkmon.ZorkdexData.ZorkdexEntry;
  *   <li>Economy system (Money, ZorkMart, ZorkCenter healing, and item purchasing)</li>
  *   <li>PC Storage Box system accessible at ZorkCenters</li>
  *   <li>Zorkdex viewer with search and filtering capabilities</li>
- *   <li>Relic Castle riddle prompt for Rare Candies</li>
+ *   <li>Relic Castle riddle prompt for Rare Candies & Morse code secret for Level 99 Regigigas</li>
+ *   <li>Pinwheel Forest Bug Catcher trainer battle</li>
  *   <li>Unified Bag/Items Menu ([14] Items) supporting both Potions and Rare Candies</li>
  *   <li>Forced Wild Encounter / Hunt action ([15] Hunt) in wild grass areas</li>
  * </ul>
@@ -409,6 +410,9 @@ public class Zorkmon {
                     if (lvl == 25) return Move.get("Volt Switch");
                     if (lvl == 36) return Move.get("Thunder");
                     break;
+                case "Regigigas":
+                    if (lvl == 100) return Move.get("Earthquake");
+                    break;
             }
             // General filler moves
             if (lvl == 7) return Move.get("Quick Attack");
@@ -627,6 +631,13 @@ public class Zorkmon {
         };
         rivalParty.add(forestPool[random.nextInt(forestPool.length)]);
 
+        // --- Build Pinwheel Forest Bug Catcher's Party ---
+        String bugTrainerName = "Bug Catcher Wade";
+        List<ZorkmonPet> bugTrainerParty = new ArrayList<>();
+        bugTrainerParty.add(new ZorkmonPet("Sewaddle", "Bug", "Grass", 6, 62, 18, 15, 62, 255, Move.get("Bug Bite")));
+        bugTrainerParty.add(new ZorkmonPet("Venipede", "Bug", "Poison", 6, 66, 19, 14, 52, 255, Move.get("Poison Tail")));
+        bugTrainerParty.add(new ZorkmonPet("Joltik", "Bug", "Electric", 6, 48, 21, 12, 64, 190, Move.get("Electroweb")));
+
         System.out.println("\nYou chose " + starter.name + "!");
         System.out.println(rivalName + " chose " + rivalStarter.name + "!");
 
@@ -642,7 +653,9 @@ public class Zorkmon {
 
         String currentRoom = "Nuvema Town";
         boolean itemFound = false;
+        boolean regigigasFound = false;
         boolean npcDefeated = false;
+        boolean bugTrainerDefeated = false;
         int activeIndex = 0;
 
         boolean running = true;
@@ -661,7 +674,7 @@ public class Zorkmon {
             switch (input) {
                 case "1":
                 case "look":
-                    describeRoom(currentRoom, rivalParty.get(0), itemFound, npcDefeated, rivalName);
+                    describeRoom(currentRoom, rivalParty.get(0), itemFound, npcDefeated, bugTrainerDefeated, rivalName, bugTrainerName);
                     if (currentRoom.equals("Relic Castle")) {
                         System.out.print("\nWhat is the greatest promise? > ");
                         String answer = scanner.nextLine().trim().toLowerCase();
@@ -801,6 +814,37 @@ public class Zorkmon {
                         } else {
                             System.out.println("You search around, but find nothing else useful.");
                         }
+                    } else if (currentRoom.equals("Relic Castle")) {
+                        if (!regigigasFound) {
+                            System.out.println("\nYou uncover an ancient stone tablet etched with strange dots and dashes:");
+                            System.out.println(".-. . --. .. --. .. --. .- ...");
+                            System.out.print("Speak the true name of the colossus > ");
+                            String morseAnswer = scanner.nextLine().trim().toLowerCase();
+                            if (morseAnswer.equals("regigigas")) {
+                                regigigasFound = true;
+                                ZorkmonPet regigigas = new ZorkmonPet("Regigigas", "Normal", null, 99, 575, 302, 213, 250, 3, Move.get("Hyper Beam"));
+                                System.out.println("\n✨ ======================================================= ✨");
+                                System.out.println("   The earth trembles! A Level 99 Regigigas awakened and    ");
+                                System.out.println("   chose to join your journey!                             ");
+                                System.out.println("✨ ======================================================= ✨\n");
+
+                                if (party.size() < 6) {
+                                    party.add(regigigas);
+                                    System.out.println("Regigigas was added to your party!");
+                                } else {
+                                    System.out.println("Your party is full (6/6 Zorkmon)!");
+                                    boolean replaced = promptPartyReplacement(party, regigigas, scanner);
+                                    if (!replaced) {
+                                        storageBox.add(regigigas);
+                                        System.out.println("Regigigas was sent to PC storage!");
+                                    }
+                                }
+                            } else {
+                                System.out.println("The stone tablet remains silent...");
+                            }
+                        } else {
+                            System.out.println("The ancient stone tablet sits dormant now that Regigigas has awakened.");
+                        }
                     } else {
                         System.out.println("Nothing of interest to search here.");
                     }
@@ -819,6 +863,17 @@ public class Zorkmon {
                             }
                         } else {
                             printRivalDefeatedDialogue(rivalName, playerGender, playerName, rivalParty.get(0).name);
+                        }
+                    } else if (currentRoom.equals("Pinwheel Forest")) {
+                        if (!bugTrainerDefeated) {
+                            bugTrainerDefeated = startBugTrainerBattle(party, activeIndex, bugTrainerParty, scanner, random, bugTrainerName, money);
+                            if (allFainted(party)) {
+                                handleBlackout(party, zorkBalls, money);
+                                currentRoom = "Nuvema Town";
+                                activeIndex = 0;
+                            }
+                        } else {
+                            System.out.println(bugTrainerName + ": \"Your Zorkmon are super strong! My Bug-types still have a lot to learn!\"");
                         }
                     } else {
                         System.out.println("There is no trainer here to challenge.");
@@ -862,7 +917,7 @@ public class Zorkmon {
             }
 
             boolean skipRandomEncounter = input.equals("13") || input.equals("quit") || input.equals("exit")
-                    || input.equals("12") || input.equals("challenge")
+                    || input.equals("12") || input.equals("challenge") || input.equals("talk")
                     || input.equals("14") || input.equals("items") || input.equals("item") || input.equals("inventory")
                     || input.equals("15") || input.equals("hunt") || input.equals("encounter") || input.equals("wild");
 
@@ -1210,7 +1265,7 @@ public class Zorkmon {
         }
     }
 
-    private static void describeRoom(String room, ZorkmonPet npc, boolean itemFound, boolean npcDefeated, String rivalName) {
+    private static void describeRoom(String room, ZorkmonPet npc, boolean itemFound, boolean npcDefeated, boolean bugTrainerDefeated, String rivalName, String bugTrainerName) {
         switch (room) {
             case "Nuvema Town":
                 System.out.println("A quiet rural town with a ZorkCenter. Route 1 lies to the NORTH.");
@@ -1223,6 +1278,11 @@ public class Zorkmon {
                 break;
             case "Pinwheel Forest":
                 System.out.println("A dense forest full of wild Gen 5 Bug and Grass Zorkmon. Heading WEST leads back to Route 1.");
+                if (!bugTrainerDefeated) {
+                    System.out.println(bugTrainerName + " is scanning the trees with a bug net! (try 'challenge')");
+                } else {
+                    System.out.println(bugTrainerName + " is busy tending to his Bug-type Zorkmon.");
+                }
                 break;
             case "Accumula Town":
                 System.out.println("A bustling hillside town featuring a ZorkCenter and ZorkMart! NORTH leads to Relic Castle.");
@@ -1418,6 +1478,140 @@ public class Zorkmon {
                     System.out.println("You won $" + prizeMoney + " in prize money!");
                     player.gainExp(expGained, scanner);
                     return true;
+                }
+            }
+        }
+
+        party.get(activeIdx).clearVolatileConditions();
+        return false;
+    }
+
+    /**
+     * Handles the Bug Catcher trainer battle in Pinwheel Forest.
+     */
+    private static boolean startBugTrainerBattle(List<ZorkmonPet> party, int initialActiveIndex, List<ZorkmonPet> bugTrainerParty, Scanner scanner, Random random, String trainerName, int[] money) {
+        System.out.println("================ BATTLE START ================");
+        System.out.println(trainerName + ": \"Hey! My Bug Zorkmon and I have been training in Pinwheel Forest all day! Let's battle! Go, " + bugTrainerParty.get(0).name + "!\"");
+
+        int activeIdx = initialActiveIndex;
+        int trainerIdx = 0;
+        party.get(activeIdx).clearVolatileConditions();
+        bugTrainerParty.get(trainerIdx).clearVolatileConditions();
+
+        while (!allFainted(party) && trainerIdx < bugTrainerParty.size()) {
+            ZorkmonPet opponent = bugTrainerParty.get(trainerIdx);
+            ZorkmonPet player = party.get(activeIdx);
+
+            if (player.isFainted()) {
+                System.out.println("\n" + player.name + " is fainted! You must send out another Zorkmon!");
+                activeIdx = forceBattleSwitch(party, activeIdx, scanner);
+                player = party.get(activeIdx);
+            }
+
+            player.flinched = false;
+            opponent.flinched = false;
+
+            System.out.println("\n" + player.name + player.getStatusTag() + " HP: " + player.hp + "/" + player.maxHp
+                    + " | " + trainerName + "'s " + opponent.name + opponent.getStatusTag() + " HP: " + opponent.hp + "/" + opponent.maxHp
+                    + " (Trainer Zorkmon Left: " + (bugTrainerParty.size() - trainerIdx) + "/" + bugTrainerParty.size() + ")");
+            System.out.println("Actions: [1] Fight  [2] Switch");
+            System.out.print("Battle > ");
+
+            String mainChoice = scanner.nextLine().trim();
+            Move selectedMove = null;
+
+            if (mainChoice.equals("1") || mainChoice.equalsIgnoreCase("fight")) {
+                System.out.println("\n--- CHOOSE A MOVE ---");
+                for (int i = 0; i < player.moves.size(); i++) {
+                    Move m = player.moves.get(i);
+                    String effectTag = (m.getEffect() != null) ? " [" + m.getEffect() + " " + m.getEffectChance() + "%]" : "";
+                    System.out.println("[" + (i + 1) + "] " + m.getName() + " (" + m.getType() + " | Power: " + m.getPower() + " | Acc: " + m.getAccuracy() + "%)" + effectTag);
+                }
+                System.out.print("Select move (0 to go back) > ");
+                try {
+                    int mChoice = Integer.parseInt(scanner.nextLine().trim());
+                    if (mChoice >= 1 && mChoice <= player.moves.size()) {
+                        selectedMove = player.moves.get(mChoice - 1);
+                    } else {
+                        continue;
+                    }
+                } catch (NumberFormatException e) {
+                    System.out.println("Invalid selection!");
+                    continue;
+                }
+            } else if (mainChoice.equals("2") || mainChoice.equalsIgnoreCase("switch")) {
+                int newIdx = handleInBattleSwitch(party, activeIdx, scanner);
+                if (newIdx != activeIdx) {
+                    player.clearVolatileConditions();
+                    activeIdx = newIdx;
+                    player = party.get(activeIdx);
+                    player.clearVolatileConditions();
+                    System.out.println("Go! " + player.name + "!");
+                } else {
+                    continue;
+                }
+            } else {
+                System.out.println("Invalid battle choice!");
+                continue;
+            }
+
+            // --- Player Attack Turn ---
+            if (selectedMove != null) {
+                executeMoveTurn(player, opponent, selectedMove, false, random, trainerName + "'s ");
+
+                if (opponent.isFainted()) {
+                    System.out.println("\n" + trainerName + "'s " + opponent.name + " fainted!");
+                    int expGained = (opponent.baseExpYield * opponent.level) / 7;
+                    player.gainExp(expGained, scanner);
+                    trainerIdx++;
+
+                    if (trainerIdx < bugTrainerParty.size()) {
+                        ZorkmonPet nextPet = bugTrainerParty.get(trainerIdx);
+                        nextPet.clearVolatileConditions();
+                        System.out.println("\n" + trainerName + " sent out " + nextPet.name + "!");
+                    } else {
+                        player.clearVolatileConditions();
+                        System.out.println("\nYou defeated " + trainerName + "!");
+                        int prizeMoney = 600;
+                        money[0] += prizeMoney;
+                        System.out.println("You won $" + prizeMoney + " in prize money!");
+                        return true;
+                    }
+                    continue;
+                }
+            }
+
+            // --- Opponent Counterattack Turn ---
+            if (!player.isFainted() && !opponent.isFainted()) {
+                System.out.println("\n" + trainerName + "'s " + opponent.name + " prepares to attack!");
+                Move oppMove = opponent.moves.get(random.nextInt(opponent.moves.size()));
+                executeMoveTurn(opponent, player, oppMove, true, random, "");
+            }
+
+            // --- End-of-Turn Status Damage (Burn / Poison) ---
+            if (!player.isFainted()) {
+                applyEndOfTurnStatusDamage(player);
+            }
+            if (!opponent.isFainted()) {
+                applyEndOfTurnStatusDamage(opponent);
+                if (opponent.isFainted()) {
+                    System.out.println("\n" + trainerName + "'s " + opponent.name + " fainted!");
+                    int expGained = (opponent.baseExpYield * opponent.level) / 7;
+                    player.gainExp(expGained, scanner);
+                    trainerIdx++;
+
+                    if (trainerIdx < bugTrainerParty.size()) {
+                        ZorkmonPet nextPet = bugTrainerParty.get(trainerIdx);
+                        nextPet.clearVolatileConditions();
+                        System.out.println("\n" + trainerName + " sent out " + nextPet.name + "!");
+                    } else {
+                        player.clearVolatileConditions();
+                        System.out.println("\nYou defeated " + trainerName + "!");
+                        int prizeMoney = 600;
+                        money[0] += prizeMoney;
+                        System.out.println("You won $" + prizeMoney + " in prize money!");
+                        return true;
+                    }
                 }
             }
         }
